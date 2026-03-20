@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import Swal from "sweetalert2";
 import { motion } from "framer-motion";
-import { Metadata } from "next";
-import { 
+import {
   Menu, X, Github, Linkedin, Mail, ExternalLink, 
   Download, Code2, Smartphone, Database, Globe 
 } from "lucide-react";
@@ -55,10 +55,11 @@ const projects = [
 export default function Portfolio() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
+  setLoading(true);
 
   const res = await fetch("/api/contact", {
     method: "POST",
@@ -68,10 +69,27 @@ const handleSubmit = async (e: React.FormEvent) => {
     body: JSON.stringify(formData),
   });
 
+  setLoading(false);
+
   if (res.ok) {
-    setSubmitted(true);
     setFormData({ name: "", email: "", message: "" });
-    setTimeout(() => setSubmitted(false), 2500);
+    Swal.fire({
+      icon: "success",
+      title: "Message Sent!",
+      text: "Thanks! I'll get back to you soon.",
+      confirmButtonColor: "#7c3aed",
+      background: "#18181b",
+      color: "#ffffff",
+    });
+  } else {
+    Swal.fire({
+      icon: "error",
+      title: "Failed to send",
+      text: "Something went wrong. Please try again.",
+      confirmButtonColor: "#7c3aed",
+      background: "#18181b",
+      color: "#ffffff",
+    });
   }
 };
 
@@ -113,7 +131,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   {link.name}
                 </a>
               ))}
-              <a href="#" target="_blank" className="flex items-center gap-2">
+              <a href="/JimmyBautista_Resume.pdf" target="_blank" className="flex items-center gap-2">
                 <Download /> Download Resume
               </a>
             </div>
@@ -331,9 +349,18 @@ const handleSubmit = async (e: React.FormEvent) => {
             
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
             >
-              {submitted ? "Message Sent ✓" : "Send Message"}
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Sending...
+                </>
+              ) : "Send Message"}
             </button>
           </form>
 

@@ -14,7 +14,8 @@
     "next": "^16.1.7",
     "nodemailer": "^8.0.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sweetalert2": "^11.26.24"
   },
   "devDependencies": {
     "@types/node": "^20",
