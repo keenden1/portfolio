@@ -92,7 +92,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </a>
             ))}
             <a
-              href="/Jimmy_Bautista_Resume.pdf"
+              href="/JimmyBautista_Resume.pdf"
               target="_blank"
               className="flex items-center gap-2 px-6 py-3 bg-white text-zinc-950 rounded-2xl font-medium hover:bg-zinc-200 transition"
             >
