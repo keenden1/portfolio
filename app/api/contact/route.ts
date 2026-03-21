@@ -12,12 +12,17 @@ export async function POST(req: Request) {
     },
   });
 
-  await transporter.sendMail({
-    from: email,
-    to: process.env.EMAIL_TO,
-    subject: `New message from ${name}`,
-    text: `From: ${name} <${email}>\n\n${message}`,
-  });
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_TO,
+      subject: `New message from ${name}`,
+      text: `From: ${name} <${email}>\n\n${message}`,
+    });
+  } catch (err) {
+    console.error("Mail error:", err);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }
