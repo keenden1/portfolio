@@ -101,6 +101,28 @@ grant insert, update, delete on public.projects, public.skills, public.experienc
 grant insert, update, delete on public.site_settings to authenticated;
 grant select on public.admin_users to authenticated;
 
+-- Project images are publicly readable, but only admins can upload, replace, or delete them.
+insert into storage.buckets (id, name, public)
+values ('project-images', 'project-images', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public can view project images" on storage.objects;
+create policy "Public can view project images" on storage.objects for select to public
+  using (bucket_id = 'project-images');
+
+drop policy if exists "Admins can upload project images" on storage.objects;
+create policy "Admins can upload project images" on storage.objects for insert to authenticated
+  with check (bucket_id = 'project-images' and (select public.is_admin()));
+
+drop policy if exists "Admins can update project images" on storage.objects;
+create policy "Admins can update project images" on storage.objects for update to authenticated
+  using (bucket_id = 'project-images' and (select public.is_admin()))
+  with check (bucket_id = 'project-images' and (select public.is_admin()));
+
+drop policy if exists "Admins can delete project images" on storage.objects;
+create policy "Admins can delete project images" on storage.objects for delete to authenticated
+  using (bucket_id = 'project-images' and (select public.is_admin()));
+
 -- After creating your Supabase Auth user, run:
 -- insert into public.admin_users (user_id) values ('YOUR-AUTH-USER-UUID');
 

@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import {
-  Menu, X, Github, Linkedin, Mail, ExternalLink, 
-  Download, Code2, Smartphone, Database, Globe 
+  Menu, X, Github, Linkedin, Mail, ExternalLink,
+  Download, Code2, Smartphone, Database, Globe, Sun, Moon, Sparkles
 } from "lucide-react";
 
 
@@ -92,17 +92,42 @@ const fallbackSettings = {
   made_with: "Made with ❤️ and Next.js 15",
 };
 
+const hasSupabaseConfig = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+);
+
+type ThemeMode = "light" | "dark" | "amoled";
+
+const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "amoled", label: "AMOLED", icon: Sparkles },
+];
+
 export default function Portfolio() {
-  const [projects, setProjects] = useState(fallbackProjects);
+  const reduceMotion = useReducedMotion();
+  const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
   const [skills, setSkills] = useState(fallbackSkills);
   const [experiences, setExperiences] = useState(fallbackExperiences);
   const [settings, setSettings] = useState(fallbackSettings);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
+    const savedTheme = window.localStorage.getItem("portfolio-theme") as ThemeMode | null;
+    if (savedTheme && themeOptions.some((option) => option.value === savedTheme)) setTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("portfolio-theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (!hasSupabaseConfig) return;
 
     const supabase = createClient();
     Promise.all([
@@ -111,14 +136,18 @@ export default function Portfolio() {
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
       supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
     ]).then(([projectsResult, skillsResult, experiencesResult, settingsResult]) => {
-      if (projectsResult.data?.length) setProjects(projectsResult.data.map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url })));
+      if (projectsResult.error) {
+        console.error("Unable to load projects from Supabase:", projectsResult.error.message);
+      } else {
+        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url })));
+      }
       if (skillsResult.data?.length) setSkills(skillsResult.data);
       if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
       if (settingsResult.data?.content) setSettings({ ...fallbackSettings, ...settingsResult.data.content });
     });
   }, []);
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
 
@@ -154,6 +183,36 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 };
 
+  const ThemeMenu = () => (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Choose color theme"
+        aria-expanded={themeMenuOpen}
+        onClick={() => setThemeMenuOpen((open) => !open)}
+        className="rounded-xl p-2 transition hover:bg-white/10"
+      >
+        {theme === "light" ? <Sun size={22} /> : theme === "amoled" ? <Sparkles size={22} /> : <Moon size={22} />}
+      </button>
+      {themeMenuOpen && (
+        <div className="theme-menu absolute right-0 top-12 z-[60] w-44 rounded-xl p-2 shadow-2xl">
+          {themeOptions.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => { setTheme(value); setThemeMenuOpen(false); }}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition ${theme === value ? "theme-option-active" : "theme-option"}`}
+            >
+              <Icon size={20} />
+              <span>{label}</span>
+              {theme === value && <span className="ml-auto text-sky-400">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       {/* NAVBAR */}
@@ -177,6 +236,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             >
               <Download size={18} /> Resume
             </a>
+            <ThemeMenu />
           </div>
 
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
@@ -195,6 +255,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <a href="/JimmyBautista_Resume.pdf" target="_blank" className="flex items-center gap-2">
                 <Download /> Download Resume
               </a>
+              <ThemeMenu />
             </div>
           </div>
         )}
@@ -310,10 +371,35 @@ const handleSubmit = async (e: React.FormEvent) => {
             {projects.map((project, index) => (
               <motion.div
                 key={index}
-                whileHover={{ y: -10 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                whileHover={reduceMotion ? undefined : { y: -6 }}
+                transition={reduceMotion ? undefined : { duration: 0.55, delay: index * 0.08, ease: "easeOut" }}
                 className="project-card glass rounded-3xl overflow-hidden group"
               >
-                <img src={project.image} alt={project.title} className="w-full h-64 object-cover" />
+                <button
+                  type="button"
+                  aria-label={`Preview ${project.title} image`}
+                  onClick={() => Swal.fire({
+                    title: project.title,
+                    imageUrl: project.image,
+                    imageAlt: project.title,
+                    showCloseButton: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: true,
+                    background: "#18181b",
+                    color: "#ffffff",
+                    backdrop: "rgba(0, 0, 0, 0.78)",
+                    width: "min(90vw, 1000px)",
+                    imageWidth: "100%",
+                    imageHeight: "auto",
+                  })}
+                  className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
+                >
+                  <img src={project.image} alt={project.title} className="h-64 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
+                </button>
                 
                 <div className="p-8">
                   <h3 className="text-3xl font-semibold mb-3">{project.title}</h3>
