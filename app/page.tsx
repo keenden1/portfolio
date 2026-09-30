@@ -88,7 +88,6 @@ const fallbackSettings = {
   github_url: "https://github.com/keenden1",
   linkedin_url: "https://linkedin.com",
   twitter_url: "https://twitter.com",
-  footer_text: "© 2026 Jimmy Bautista. All rights reserved.",
   made_with: "Made with ❤️ and Next.js 15",
 };
 
@@ -106,6 +105,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
 
 export default function Portfolio() {
   const reduceMotion = useReducedMotion();
+  const currentYear = new Date().getFullYear();
   const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
   const [skills, setSkills] = useState(fallbackSkills);
   const [experiences, setExperiences] = useState(fallbackExperiences);
@@ -229,6 +229,7 @@ export default function Portfolio() {
                 {link.name}
               </a>
             ))}
+            <ThemeMenu />
             <a
               href="/JimmyBautista_Resume.pdf"
               target="_blank"
@@ -236,7 +237,6 @@ export default function Portfolio() {
             >
               <Download size={18} /> Resume
             </a>
-            <ThemeMenu />
           </div>
 
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
@@ -324,6 +324,8 @@ export default function Portfolio() {
               <img 
                 src="https://picsum.photos/id/64/600/700" 
                 alt="Jimmy Bautista"
+                loading="lazy"
+                decoding="async"
                 className="rounded-3xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
@@ -398,7 +400,7 @@ export default function Portfolio() {
                   })}
                   className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
                 >
-                  <img src={project.image} alt={project.title} className="h-64 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
+                  <img loading="lazy" decoding="async" src={project.image} alt={project.title} className="h-64 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
                 </button>
                 
                 <div className="p-8">
@@ -532,13 +534,13 @@ export default function Portfolio() {
       {/* FOOTER */}
       <footer className="border-t border-white/10 py-12">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-zinc-500">
-          <div>© 2026 Jimmy Bautista. All rights reserved.</div>
+          <div>© {currentYear} {settings.display_name}. All rights reserved.</div>
           <div className="flex gap-8">
             <a href={settings.github_url} target="_blank">GitHub</a>
             <a href={settings.linkedin_url} target="_blank">LinkedIn</a>
             <a href={settings.twitter_url} target="_blank">Twitter</a>
           </div>
-          <div>Made with ❤️ and Next.js 15</div>
+          <div>{settings.made_with}</div>
         </div>
       </footer>
     </>
