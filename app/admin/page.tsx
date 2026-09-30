@@ -3,12 +3,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { createClient } from "@/lib/supabase/client";
+import { Moon, Sparkles, Sun } from "lucide-react";
 
 type Project = { id: string; title: string; description: string; tech: string[]; live_url: string; github_url: string; image_url: string; sort_order: number; published: boolean };
 type Skill = { id: string; label: string; icon: string; sort_order: number; published: boolean };
 type Experience = { id: string; role: string; company: string; period: string; description: string; sort_order: number; published: boolean };
 type Settings = Record<string, string>;
 type Modal = "project" | "skill" | "experience" | "settings" | null;
+type ThemeMode = "light" | "dark" | "amoled";
 
 const input = "w-full rounded-xl bg-white/10 px-4 py-3";
 const emptyProject = { title: "", description: "", tech: "", live_url: "#", github_url: "#", image_url: "", sort_order: 0, published: true };
@@ -23,6 +25,12 @@ const alertTheme = {
   color: "#ffffff",
 };
 
+const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "amoled", label: "AMOLED", icon: Sparkles },
+];
+
 function ModalBox({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) {
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 px-4 py-10"><div className="relative mx-auto max-w-4xl glass rounded-3xl p-6"><button type="button" onClick={close} className="absolute right-6 top-4 text-2xl text-zinc-400">×</button><h2 className="mb-6 text-2xl font-semibold">{title}</h2>{children}</div></div>;
 }
@@ -34,9 +42,19 @@ export default function AdminPage() {
 
 function AdminDashboard() {
   const supabase = createClient();
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [userEmail, setUserEmail] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [modal, setModal] = useState<Modal>(null);
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [userEmail, setUserEmail] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [modal, setModal] = useState<Modal>(null); const [theme, setTheme] = useState<ThemeMode>("dark"); const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]); const [skills, setSkills] = useState<Skill[]>([]); const [experiences, setExperiences] = useState<Experience[]>([]); const [settings, setSettings] = useState(defaultSettings);
   const [project, setProject] = useState(emptyProject); const [projectImage, setProjectImage] = useState<File | null>(null); const [projectImagePreview, setProjectImagePreview] = useState<string | null>(null); const [skill, setSkill] = useState(emptySkill); const [experience, setExperience] = useState(emptyExperience); const [editingProject, setEditingProject] = useState<string | null>(null); const [editingSkill, setEditingSkill] = useState<string | null>(null); const [editingExperience, setEditingExperience] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("portfolio-theme") as ThemeMode | null;
+    if (savedTheme && themeOptions.some((option) => option.value === savedTheme)) setTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("portfolio-theme", theme);
+  }, [theme]);
 
   async function load() {
     const [p, s, e, st] = await Promise.all([supabase.from("projects").select("*").order("sort_order"), supabase.from("skills").select("*").order("sort_order"), supabase.from("experiences").select("*").order("sort_order"), supabase.from("site_settings").select("content").eq("id", 1).maybeSingle()]);
@@ -53,7 +71,33 @@ function AdminDashboard() {
     setProjectImagePreview(previewUrl);
     return () => URL.revokeObjectURL(previewUrl);
   }, [projectImage]);
-  async function signIn(event: FormEvent) { event.preventDefault(); setBusy(true); setMessage(""); try { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) setMessage(error.message); else { setUserEmail(data.user?.email ?? null); await load(); } } catch { setMessage("Unable to sign in. Check your connection."); } finally { setBusy(false); } }
+  async function signIn(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setUserEmail(data.user?.email ?? null);
+        await load();
+        await Swal.fire({
+          ...alertTheme,
+          icon: "success",
+          title: "Signed in successfully",
+          text: "Welcome back to your portfolio CMS.",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+    } catch {
+      setMessage("Unable to sign in. Check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function saveProject(event: FormEvent) {
     event.preventDefault();
     let imageUrl = project.image_url;
@@ -142,7 +186,7 @@ function AdminDashboard() {
     });
   }
 
-  if (!userEmail) return <main className="min-h-screen bg-zinc-950 px-6 flex items-center justify-center text-white"><form onSubmit={signIn} className="glass w-full max-w-md space-y-5 rounded-3xl p-8"><h1 className="text-3xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Sign in with your Supabase admin account.</p><input className={input} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required /><input className={input} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required /><button disabled={busy} className="w-full rounded-xl bg-violet-600 py-3 font-semibold disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button><a href="/admin/forgot-password" className="block text-center text-sm text-violet-300">Forgot password?</a>{message && <p className="text-red-300">{message}</p>}</form></main>;
+  if (!userEmail) return <main className="min-h-screen bg-zinc-950 px-6 flex items-center justify-center text-white"><form onSubmit={signIn} className="glass w-full max-w-md space-y-5 rounded-3xl p-8"><h1 className="text-3xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Sign in with your Supabase admin account.</p><input className={input} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required /><input className={input} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required /><button disabled={busy} className="w-full rounded-xl bg-violet-600 py-3 font-semibold disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button><a href="/admin/forgot-password" className="block text-center text-sm text-violet-300">Forgot password?</a>{message && <p className="text-center text-red-300">{message}</p>}</form></main>;
 
   const update = (key: string, value: string) => setSettings({ ...settings, [key]: value });
   const field = (key: string, label: string, area = false) => <label className="space-y-2"><span>{label}</span>{area ? <textarea className={input} rows={3} value={settings[key]} onChange={(e) => update(key, e.target.value)} /> : <input className={input} value={settings[key]} onChange={(e) => update(key, e.target.value)} />}</label>;
@@ -159,10 +203,50 @@ function AdminDashboard() {
     if (!result.isConfirmed) return;
 
     await supabase.auth.signOut();
+    setPassword("");
+    await Swal.fire({
+      ...alertTheme,
+      icon: "success",
+      title: "Signed out successfully",
+      text: "You have been logged out.",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
     setUserEmail(null);
   }
 
-  return <main className="min-h-screen bg-zinc-950 px-6 py-10 text-white"><div className="mx-auto max-w-6xl space-y-8"><header className="flex justify-between"><div><h1 className="text-4xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Manage all portfolio content.</p></div><button onClick={signOut} className="h-fit rounded-xl border border-white/20 px-4 py-2">Sign out</button></header>
+  const ThemeMenu = () => (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Choose color theme"
+        aria-expanded={themeMenuOpen}
+        onClick={() => setThemeMenuOpen((open) => !open)}
+        className="rounded-xl border border-white/20 p-2 transition hover:bg-white/10"
+      >
+        {theme === "light" ? <Sun size={20} /> : theme === "amoled" ? <Sparkles size={20} /> : <Moon size={20} />}
+      </button>
+      {themeMenuOpen && (
+        <div className="theme-menu absolute right-0 top-12 z-[60] w-44 rounded-xl p-2 shadow-2xl">
+          {themeOptions.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => { setTheme(value); setThemeMenuOpen(false); }}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition ${theme === value ? "theme-option-active" : "theme-option"}`}
+            >
+              <Icon size={20} />
+              <span>{label}</span>
+              {theme === value && <span className="ml-auto text-sky-400">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return <main className="min-h-screen bg-zinc-950 px-6 py-10 text-white"><div className="mx-auto max-w-6xl space-y-8"><header className="flex justify-between"><div><h1 className="text-4xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Manage all portfolio content.</p></div><div className="flex items-start gap-3"><ThemeMenu /><button onClick={signOut} className="h-fit rounded-xl border border-white/20 px-4 py-2">Sign out</button></div></header>
 
 
 
