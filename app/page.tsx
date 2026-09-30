@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 import {
   Menu, X, Github, Linkedin, Mail, ExternalLink, 
   Download, Code2, Smartphone, Database, Globe 
@@ -17,7 +18,7 @@ const navLinks = [
   { name: "Contact", href: "#contact" },
 ];
 
-const projects = [
+const fallbackProjects = [
   {
     title: "Restoria – Educational Platform",
     desc: "Modern banking platform with real-time transactions, analytics, and AI insights.",
@@ -52,10 +53,70 @@ const projects = [
   },
 ];
 
+const fallbackSkills = [
+  { icon: "Code2", label: "Laravel & PHP" },
+  { icon: "Smartphone", label: "Flutter & Dart" },
+  { icon: "Database", label: "Firebase" },
+  { icon: "Smartphone", label: "Java & Android Studio" },
+  { icon: "Code2", label: "REST APIs & Backend" },
+  { icon: "Database", label: "MySQL & SQL" },
+  { icon: "Smartphone", label: "Mobile App Development" },
+  { icon: "Globe", label: "Full-Stack Development" },
+];
+
+const fallbackExperiences = [
+  { role: "Junior Full-Stack Developer", company: "Eljin Corp", period: "2026 — Present", desc: "Built design system for the Company." },
+  { role: "Freelance Full-Stack Developer", company: "Home", period: "2024 — Present", desc: "Developed client projects." },
+];
+
+const skillIconMap = { Code2, Smartphone, Database, Globe };
+
+const fallbackSettings = {
+  display_name: "Jimmy Bautista",
+  hero_title: "Hi, I'm Jimmy R. Bautista Jr.",
+  hero_highlight: "exceptional",
+  hero_suffix: " digital experiences.",
+  availability: "Available for freelance • Open to full-time roles",
+  hero_description: "Full-Stack Web Developer & UI Engineer • Turning ideas into pixel-perfect, high-performance products.",
+  about_paragraph_1: "I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.",
+  about_paragraph_2: "I specialize in React, Next.js, TypeScript, and modern backend technologies. My focus is on performance, beautiful interfaces, and building products people love to use.",
+  about_paragraph_3: "When I'm not coding, you'll find me exploring new design trends, contributing to open source, or capturing street photography.",
+  years_experience: "2+",
+  contact_heading: "Let's build something great together",
+  contact_description: "Currently open to new opportunities and interesting projects.",
+  email: "bautistajimmy.dev@gmail.com",
+  github_url: "https://github.com/keenden1",
+  linkedin_url: "https://linkedin.com",
+  twitter_url: "https://twitter.com",
+  footer_text: "© 2026 Jimmy Bautista. All rights reserved.",
+  made_with: "Made with ❤️ and Next.js 15",
+};
+
 export default function Portfolio() {
+  const [projects, setProjects] = useState(fallbackProjects);
+  const [skills, setSkills] = useState(fallbackSkills);
+  const [experiences, setExperiences] = useState(fallbackExperiences);
+  const [settings, setSettings] = useState(fallbackSettings);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
+
+    const supabase = createClient();
+    Promise.all([
+      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url").eq("published", true).order("sort_order"),
+      supabase.from("skills").select("label, icon").eq("published", true).order("sort_order"),
+      supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
+      supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
+    ]).then(([projectsResult, skillsResult, experiencesResult, settingsResult]) => {
+      if (projectsResult.data?.length) setProjects(projectsResult.data.map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url })));
+      if (skillsResult.data?.length) setSkills(skillsResult.data);
+      if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
+      if (settingsResult.data?.content) setSettings({ ...fallbackSettings, ...settingsResult.data.content });
+    });
+  }, []);
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -100,7 +161,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-violet-600 rounded-2xl flex items-center justify-center font-bold text-2xl">JB</div>
-            <span className="text-2xl font-semibold tracking-tight">Jimmy Bautista</span>
+            <span className="text-2xl font-semibold tracking-tight">{settings.display_name}</span>
           </div>
 
           <div className="hidden md:flex items-center gap-10">
@@ -147,19 +208,26 @@ const handleSubmit = async (e: React.FormEvent) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-white/10 mb-6">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-white/10 mb-6 hidden">
               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
               Available for freelance • Open to full-time roles
             </div>
 
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-white/10 mb-6">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              {settings.availability}
+            </div>
+
             <h1 className="text-6xl md:text-7xl font-bold tracking-tighter mb-6">
-              Hi, I'm Jimmy R. Bautista Jr.<br />
-              I build <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">exceptional</span> digital experiences.
+              {settings.hero_title}<br />
+              I build <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">{settings.hero_highlight}</span>{settings.hero_suffix}
             </h1>
 
-            <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-12">
+            <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-12 hidden">
               Full-Stack Web Developer & UI Engineer • Turning ideas into pixel-perfect, high-performance products.
             </p>
+
+            <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-12">{settings.hero_description}</p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#projects" className="px-8 py-4 bg-white text-zinc-950 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:bg-zinc-200 transition">
@@ -181,14 +249,13 @@ const handleSubmit = async (e: React.FormEvent) => {
               <h2 className="text-5xl font-bold mb-8">About Me</h2>
               <div className="space-y-6 text-lg text-zinc-400">
                 <p>
-                  I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.
+                  {settings.about_paragraph_1}
                 </p>
                 <p>
-                  I specialize in React, Next.js, TypeScript, and modern backend technologies. 
-                  My focus is on performance, beautiful interfaces, and building products people love to use.
+                  {settings.about_paragraph_2}
                 </p>
                 <p>
-                  When I'm not coding, you'll find me exploring new design trends, contributing to open source, or capturing street photography.
+                  {settings.about_paragraph_3}
                 </p>
               </div>
             </div>
@@ -199,7 +266,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 className="rounded-3xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
-                <div className="text-5xl font-bold">2+</div>
+                <div className="text-5xl font-bold">{settings.years_experience}</div>
                 <div className="text-zinc-400">years experience</div>
               </div>
             </div>
@@ -212,25 +279,19 @@ const handleSubmit = async (e: React.FormEvent) => {
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-5xl font-bold text-center mb-16">Skills & Technologies</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { icon: Code2, label: "Laravel & PHP" },
-              { icon: Smartphone, label: "Flutter & Dart" },
-              { icon: Database, label: "Firebase" },
-              { icon: Smartphone, label: "Java & Android Studio" },
-              { icon: Code2, label: "REST APIs & Backend" },
-              { icon: Database, label: "MySQL & SQL" },
-              { icon: Smartphone, label: "Mobile App Development" },
-              { icon: Globe, label: "Full-Stack Development" },
-            ].map((skill, i) => (
+            {skills.map((skill, i) => {
+              const Icon = skillIconMap[skill.icon as keyof typeof skillIconMap] ?? Code2;
+              return (
               <motion.div
                 key={i}
                 whileHover={{ scale: 1.05 }}
                 className="glass p-8 rounded-3xl flex flex-col items-center text-center"
               >
-                <skill.icon size={48} className="mb-6 text-violet-400" />
+                <Icon size={48} className="mb-6 text-violet-400" />
                 <div className="font-medium text-xl">{skill.label}</div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -285,6 +346,17 @@ const handleSubmit = async (e: React.FormEvent) => {
           <h2 className="text-5xl font-bold mb-16">Experience</h2>
           
           <div className="space-y-16">
+            {experiences.map((exp, i) => (
+              <div key={i} className="flex flex-col md:flex-row gap-8">
+                <div className="md:w-56 text-zinc-400 shrink-0">{exp.period}</div>
+                <div>
+                  <div className="text-2xl font-semibold">{exp.role}</div>
+                  <div className="text-violet-400 mb-4">{exp.company}</div>
+                  <p className="text-zinc-400">{exp.desc}</p>
+                </div>
+              </div>
+            ))}
+            <div className="hidden">
             {[
               {
                 role: "Junior Full-Stack Developer",
@@ -309,6 +381,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </section>
@@ -316,9 +389,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       {/* CONTACT */}
       <section id="contact" className="py-24 border-t border-white/10 bg-zinc-900">
         <div className="max-w-xl mx-auto px-6 text-center">
-          <h2 className="text-5xl font-bold mb-6">Let's build something great together</h2>
+          <h2 className="text-5xl font-bold mb-6">{settings.contact_heading}</h2>
           <p className="text-xl text-zinc-400 mb-12">
-            Currently open to new opportunities and interesting projects.
+            {settings.contact_description}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -365,7 +438,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </form>
 
           <p className="mt-8 text-sm text-zinc-500">
-            Or email me directly at <a href="mailto:bautistajimmy.dev@gmail.com" className="underline">bautistajimmy.dev@gmail.com</a>
+            Or email me directly at <a href={`mailto:${settings.email}`} className="underline">{settings.email}</a>
           </p>
         </div>
       </section>
@@ -375,9 +448,9 @@ const handleSubmit = async (e: React.FormEvent) => {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-zinc-500">
           <div>© 2026 Jimmy Bautista. All rights reserved.</div>
           <div className="flex gap-8">
-            <a href="https://github.com" target="_blank">GitHub</a>
-            <a href="https://linkedin.com" target="_blank">LinkedIn</a>
-            <a href="https://twitter.com" target="_blank">Twitter</a>
+            <a href={settings.github_url} target="_blank">GitHub</a>
+            <a href={settings.linkedin_url} target="_blank">LinkedIn</a>
+            <a href={settings.twitter_url} target="_blank">Twitter</a>
           </div>
           <div>Made with ❤️ and Next.js 15</div>
         </div>

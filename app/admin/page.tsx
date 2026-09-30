@@ -1,0 +1,133 @@
+﻿"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import { createClient } from "@/lib/supabase/client";
+
+type Project = { id: string; title: string; description: string; tech: string[]; live_url: string; github_url: string; image_url: string; sort_order: number; published: boolean };
+type Skill = { id: string; label: string; icon: string; sort_order: number; published: boolean };
+type Experience = { id: string; role: string; company: string; period: string; description: string; sort_order: number; published: boolean };
+type Settings = Record<string, string>;
+type Modal = "project" | "skill" | "experience" | "settings" | null;
+
+const input = "w-full rounded-xl bg-white/10 px-4 py-3";
+const emptyProject = { title: "", description: "", tech: "", live_url: "#", github_url: "#", image_url: "", sort_order: 0, published: true };
+const emptySkill = { label: "", icon: "Code2", sort_order: 0, published: true };
+const emptyExperience = { role: "", company: "", period: "", description: "", sort_order: 0, published: true };
+const defaultSettings: Settings = { display_name: "Jimmy Bautista", hero_title: "Hi, I'm Jimmy R. Bautista Jr.", hero_highlight: "exceptional", hero_suffix: " digital experiences.", availability: "Available for freelance • Open to full-time roles", hero_description: "Full-Stack Web Developer & UI Engineer • Turning ideas into pixel-perfect, high-performance products.", about_paragraph_1: "I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.", about_paragraph_2: "I specialize in React, Next.js, TypeScript, and modern backend technologies.", about_paragraph_3: "When I'm not coding, you'll find me exploring new design trends.", years_experience: "2+", contact_heading: "Let's build something great together", contact_description: "Currently open to new opportunities and interesting projects.", email: "bautistajimmy.dev@gmail.com", github_url: "https://github.com/keenden1", linkedin_url: "https://linkedin.com", twitter_url: "https://twitter.com", footer_text: "© 2026 Jimmy Bautista. All rights reserved.", made_with: "Made with ❤️ and Next.js 15" };
+
+const alertTheme = {
+  confirmButtonColor: "#7c3aed",
+  cancelButtonColor: "#52525b",
+  background: "#18181b",
+  color: "#ffffff",
+};
+
+function ModalBox({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) {
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 px-4 py-10"><div className="relative mx-auto max-w-4xl glass rounded-3xl p-6"><button type="button" onClick={close} className="absolute right-6 top-4 text-2xl text-zinc-400">×</button><h2 className="mb-6 text-2xl font-semibold">{title}</h2>{children}</div></div>;
+}
+
+export default function AdminPage() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return <main className="min-h-screen bg-zinc-950 p-8 text-white">Add Supabase environment variables first.</main>;
+  return <AdminDashboard />;
+}
+
+function AdminDashboard() {
+  const supabase = createClient();
+  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [userEmail, setUserEmail] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [modal, setModal] = useState<Modal>(null);
+  const [projects, setProjects] = useState<Project[]>([]); const [skills, setSkills] = useState<Skill[]>([]); const [experiences, setExperiences] = useState<Experience[]>([]); const [settings, setSettings] = useState(defaultSettings);
+  const [project, setProject] = useState(emptyProject); const [skill, setSkill] = useState(emptySkill); const [experience, setExperience] = useState(emptyExperience); const [editingProject, setEditingProject] = useState<string | null>(null); const [editingSkill, setEditingSkill] = useState<string | null>(null); const [editingExperience, setEditingExperience] = useState<string | null>(null);
+
+  async function load() {
+    const [p, s, e, st] = await Promise.all([supabase.from("projects").select("*").order("sort_order"), supabase.from("skills").select("*").order("sort_order"), supabase.from("experiences").select("*").order("sort_order"), supabase.from("site_settings").select("content").eq("id", 1).maybeSingle()]);
+    const error = p.error || s.error || e.error || st.error; if (error) setMessage(error.message); if (p.data) setProjects(p.data as Project[]); if (s.data) setSkills(s.data as Skill[]); if (e.data) setExperiences(e.data as Experience[]); if (st.data?.content) setSettings({ ...defaultSettings, ...st.data.content });
+  }
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => { setUserEmail(data.user?.email ?? null); if (data.user) load(); }); }, []);
+  async function signIn(event: FormEvent) { event.preventDefault(); setBusy(true); setMessage(""); try { const { data, error } = await supabase.auth.signInWithPassword({ email, password }); if (error) setMessage(error.message); else { setUserEmail(data.user?.email ?? null); await load(); } } catch { setMessage("Unable to sign in. Check your connection."); } finally { setBusy(false); } }
+  async function save(table: string, value: object, id: string | null, reset: () => void, success: string) {
+    const result = id ? await supabase.from(table).update(value).eq("id", id) : await supabase.from(table).insert(value);
+    if (result.error) {
+      setMessage(result.error.message);
+      return;
+    }
+
+    reset();
+    setModal(null);
+    setMessage(success);
+    await load();
+    await Swal.fire({
+      ...alertTheme,
+      icon: "success",
+      title: "Saved successfully",
+      text: success,
+    });
+  }
+  async function remove(table: string, id: string) {
+    const result = await Swal.fire({
+      ...alertTheme,
+      icon: "warning",
+      title: "Delete this item?",
+      text: "This action cannot be undone.",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+
+    const { error } = await supabase.from(table).delete().eq("id", id);
+    if (error) setMessage(error.message); else load();
+  }
+  async function saveSettings(event: FormEvent) {
+    event.preventDefault();
+    const { error } = await supabase.from("site_settings").upsert({ id: 1, content: settings, updated_at: new Date().toISOString() });
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage("Site settings saved.");
+    setModal(null);
+    await Swal.fire({
+      ...alertTheme,
+      icon: "success",
+      title: "Saved successfully",
+      text: "Site settings saved.",
+    });
+  }
+
+  if (!userEmail) return <main className="min-h-screen bg-zinc-950 px-6 flex items-center justify-center text-white"><form onSubmit={signIn} className="glass w-full max-w-md space-y-5 rounded-3xl p-8"><h1 className="text-3xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Sign in with your Supabase admin account.</p><input className={input} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required /><input className={input} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required /><button disabled={busy} className="w-full rounded-xl bg-violet-600 py-3 font-semibold disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button><a href="/admin/forgot-password" className="block text-center text-sm text-violet-300">Forgot password?</a>{message && <p className="text-red-300">{message}</p>}</form></main>;
+
+  const update = (key: string, value: string) => setSettings({ ...settings, [key]: value });
+  const field = (key: string, label: string, area = false) => <label className="space-y-2"><span>{label}</span>{area ? <textarea className={input} rows={3} value={settings[key]} onChange={(e) => update(key, e.target.value)} /> : <input className={input} value={settings[key]} onChange={(e) => update(key, e.target.value)} />}</label>;
+  async function signOut() {
+    const result = await Swal.fire({
+      ...alertTheme,
+      icon: "question",
+      title: "Sign out?",
+      text: "Are you sure you want to log out?",
+      showCancelButton: true,
+      confirmButtonText: "Sign out",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+
+    await supabase.auth.signOut();
+    setUserEmail(null);
+  }
+
+  return <main className="min-h-screen bg-zinc-950 px-6 py-10 text-white"><div className="mx-auto max-w-6xl space-y-8"><header className="flex justify-between"><div><h1 className="text-4xl font-bold">Portfolio CMS</h1><p className="text-zinc-400">Manage all portfolio content.</p></div><button onClick={signOut} className="h-fit rounded-xl border border-white/20 px-4 py-2">Sign out</button></header>
+
+
+
+    <section><div className="mb-3 flex items-center justify-between"><h2 className="text-2xl font-semibold">Projects</h2><button onClick={() => { setProject(emptyProject); setEditingProject(null); setModal("project"); }} className="rounded-xl bg-violet-600 px-4 py-2 font-semibold">Add project</button></div><div className="space-y-3">{projects.map((item) => <article key={item.id} className="glass flex justify-between gap-4 rounded-2xl p-5"><div><h3 className="text-xl font-semibold">{item.title}</h3><p className="text-zinc-400">{item.description}</p></div><div className="flex gap-2"><button onClick={() => { setProject({ ...item, tech: item.tech.join(", ") }); setEditingProject(item.id); setModal("project"); }} className="text-violet-300">Edit</button><button onClick={() => remove("projects", item.id)} className="text-red-300">Delete</button></div></article>)}</div></section>
+    <section><div className="mb-3 flex items-center justify-between"><h2 className="text-2xl font-semibold">Skills</h2><button onClick={() => { setSkill(emptySkill); setEditingSkill(null); setModal("skill"); }} className="rounded-xl bg-violet-600 px-4 py-2 font-semibold">Add skill</button></div><div className="grid gap-3 md:grid-cols-2">{skills.map((item) => <article key={item.id} className="glass flex justify-between rounded-2xl p-4"><span>{item.label}</span><span className="flex gap-3"><button onClick={() => { setSkill(item); setEditingSkill(item.id); setModal("skill"); }} className="text-violet-300">Edit</button><button onClick={() => remove("skills", item.id)} className="text-red-300">Delete</button></span></article>)}</div></section>
+    <section><div className="mb-3 flex items-center justify-between"><h2 className="text-2xl font-semibold">Experience</h2><button onClick={() => { setExperience(emptyExperience); setEditingExperience(null); setModal("experience"); }} className="rounded-xl bg-violet-600 px-4 py-2 font-semibold">Add experience</button></div><div className="space-y-3">{experiences.map((item) => <article key={item.id} className="glass flex justify-between rounded-2xl p-4"><div><b>{item.role}</b><p className="text-zinc-400">{item.company} · {item.period}</p></div><span className="flex gap-3"><button onClick={() => { setExperience(item); setEditingExperience(item.id); setModal("experience"); }} className="text-violet-300">Edit</button><button onClick={() => remove("experiences", item.id)} className="text-red-300">Delete</button></span></article>)}</div></section>
+    <div className="mb-3 flex items-center justify-between"><h2 className="text-2xl font-semibold">Site settings</h2><button onClick={() => setModal("settings")} className="rounded-xl bg-violet-600 px-4 py-2 font-semibold">Edit site settings</button></div>{message && <p className="rounded-xl bg-violet-500/20 p-4 text-violet-200">{message}</p>}
+
+    {modal === "project" && <ModalBox title={editingProject ? "Edit project" : "Add project"} close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); save("projects", { ...project, tech: project.tech.split(",").map((x) => x.trim()).filter(Boolean) }, editingProject, () => { setProject(emptyProject); setEditingProject(null); }, "Project saved."); }} className="grid gap-4 md:grid-cols-2"><input className={input} placeholder="Title" value={project.title} onChange={(e) => setProject({ ...project, title: e.target.value })} required /><input className={input} placeholder="Image URL" value={project.image_url} onChange={(e) => setProject({ ...project, image_url: e.target.value })} /><textarea className="rounded-xl bg-white/10 px-4 py-3 md:col-span-2" placeholder="Description" value={project.description} onChange={(e) => setProject({ ...project, description: e.target.value })} required /><input className={input} placeholder="Tech: Next.js, TypeScript" value={project.tech} onChange={(e) => setProject({ ...project, tech: e.target.value })} /><input className={input} type="number" placeholder="Sort order" value={project.sort_order} onChange={(e) => setProject({ ...project, sort_order: Number(e.target.value) })} /><input className={input} placeholder="Live URL" value={project.live_url} onChange={(e) => setProject({ ...project, live_url: e.target.value })} /><input className={input} placeholder="GitHub URL" value={project.github_url} onChange={(e) => setProject({ ...project, github_url: e.target.value })} /><label><input type="checkbox" checked={project.published} onChange={(e) => setProject({ ...project, published: e.target.checked })} /> Published</label><button className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold">Save project</button></form></ModalBox>}
+    {modal === "skill" && <ModalBox title={editingSkill ? "Edit skill" : "Add skill"} close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); save("skills", skill, editingSkill, () => { setSkill(emptySkill); setEditingSkill(null); }, "Skill saved."); }} className="grid gap-4 md:grid-cols-3"><input className={input} placeholder="Skill name" value={skill.label} onChange={(e) => setSkill({ ...skill, label: e.target.value })} required /><input className={input} placeholder="Icon: Code2" value={skill.icon} onChange={(e) => setSkill({ ...skill, icon: e.target.value })} /><input className={input} type="number" placeholder="Sort order" value={skill.sort_order} onChange={(e) => setSkill({ ...skill, sort_order: Number(e.target.value) })} /><label><input type="checkbox" checked={skill.published} onChange={(e) => setSkill({ ...skill, published: e.target.checked })} /> Published</label><button className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold">Save skill</button></form></ModalBox>}
+    {modal === "experience" && <ModalBox title={editingExperience ? "Edit experience" : "Add experience"} close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); save("experiences", experience, editingExperience, () => { setExperience(emptyExperience); setEditingExperience(null); }, "Experience saved."); }} className="grid gap-4 md:grid-cols-2"><input className={input} placeholder="Role" value={experience.role} onChange={(e) => setExperience({ ...experience, role: e.target.value })} required /><input className={input} placeholder="Company" value={experience.company} onChange={(e) => setExperience({ ...experience, company: e.target.value })} required /><input className={input} placeholder="Period" value={experience.period} onChange={(e) => setExperience({ ...experience, period: e.target.value })} required /><input className={input} type="number" placeholder="Sort order" value={experience.sort_order} onChange={(e) => setExperience({ ...experience, sort_order: Number(e.target.value) })} /><textarea className="rounded-xl bg-white/10 px-4 py-3 md:col-span-2" placeholder="Description" value={experience.description} onChange={(e) => setExperience({ ...experience, description: e.target.value })} required /><label><input type="checkbox" checked={experience.published} onChange={(e) => setExperience({ ...experience, published: e.target.checked })} /> Published</label><button className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold">Save experience</button></form></ModalBox>}
+    {modal === "settings" && <ModalBox title="Edit site settings" close={() => setModal(null)}><form onSubmit={saveSettings} className="grid gap-4 md:grid-cols-2">{field("display_name", "Display name")}{field("hero_title", "Hero title")}{field("hero_highlight", "Hero highlighted word")}{field("hero_suffix", "Hero ending")}{field("availability", "Availability")}{field("years_experience", "Years experience")}{field("hero_description", "Hero description", true)}{field("about_paragraph_1", "About paragraph 1", true)}{field("about_paragraph_2", "About paragraph 2", true)}{field("about_paragraph_3", "About paragraph 3", true)}{field("contact_heading", "Contact heading")}{field("contact_description", "Contact description", true)}{field("email", "Email")}{field("github_url", "GitHub URL")}{field("linkedin_url", "LinkedIn URL")}{field("twitter_url", "Twitter URL")}{field("footer_text", "Footer text")}{field("made_with", "Made with text")}<button className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold md:col-span-2">Save site settings</button></form></ModalBox>}
+  </div></main>;
+}
+
