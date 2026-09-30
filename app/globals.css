@@ -9,11 +9,45 @@ html {
 html,
 body {
   transition: background-color 180ms ease, color 180ms ease;
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #8b5cf6, #6d28d9);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a78bfa, #7c3aed);
+  background-clip: padding-box;
 }
 
 [data-theme="light"] body {
   background: #f8fafc !important;
   color: #172033 !important;
+  scrollbar-color: #64748b transparent;
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  background-clip: padding-box;
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+  background-clip: padding-box;
 }
 
 [data-theme="dark"] body {
@@ -56,10 +90,56 @@ body {
   border-color: rgba(15, 23, 42, 0.12);
 }
 
+.cms-modal {
+  background: #18181b !important;
+}
+
+[data-theme="light"] .cms-modal {
+  background: #f1f3f6 !important;
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+[data-theme="light"] .modal-header {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .brand-logo {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .contact-submit {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .cms-modal form > button {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
 [data-theme="light"] input,
 [data-theme="light"] textarea {
   background: rgba(255, 255, 255, 0.78) !important;
   color: #172033 !important;
+}
+
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background: #27272a;
+  color: #ffffff;
+}
+
+[data-theme="light"] select {
+  color-scheme: light;
+}
+
+[data-theme="light"] select option {
+  background: #ffffff;
+  color: #172033;
 }
 
 .theme-menu {
@@ -107,6 +187,104 @@ body {
   box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
 }
 
+.skills-marquee {
+  overflow: hidden;
+  width: 100%;
+}
+
+.skills-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  animation: skills-scroll-left 28s linear infinite;
+}
+
+.skills-marquee-right {
+  animation-name: skills-scroll-right;
+}
+
+.skills-marquee:hover .skills-marquee-track,
+.skills-marquee:focus-within .skills-marquee-track {
+  animation-play-state: paused;
+}
+
+.skills-card {
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.skills-card:hover,
+.skills-card:focus-within {
+  border-color: rgba(167, 139, 250, 0.7);
+  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.2);
+}
+
+@media (min-width: 768px) {
+  .project-modal form > :nth-child(1) {
+    grid-column: 1 / -1;
+    order: 2;
+  }
+
+  .project-modal form > :nth-child(2) {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
+  .project-modal form > :nth-child(3) {
+    order: 3;
+  }
+
+  .project-modal form > :nth-child(4) {
+    order: 4;
+  }
+
+  .project-modal form > :nth-child(5) {
+    order: 5;
+  }
+
+  .project-modal form > :nth-child(6) {
+    order: 6;
+  }
+
+  .project-modal form > :nth-child(7) {
+    order: 7;
+  }
+
+  .project-modal form > :nth-child(8) {
+    order: 8;
+  }
+
+.project-modal form > :nth-child(9) {
+    order: 9;
+  }
+}
+
+.glass form > button {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.project-modal img[alt="Project preview"] {
+  height: 16rem;
+}
+
+@keyframes skills-scroll-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes skills-scroll-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 .theme-menu {
   animation: theme-menu-in 160ms ease-out;
   transform-origin: top right;
@@ -135,6 +313,10 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .skills-marquee-track {
+    animation: none !important;
   }
 }
 

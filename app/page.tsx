@@ -26,6 +26,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/Restioria",
     image: "https://picsum.photos/id/1015/800/600",
+    projectType: "personal" as const,
   },
   {
     title: "CHRR1 – Social Media Human Rights Platform",
@@ -34,6 +35,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/humanrights",
     image: "https://picsum.photos/id/106/800/600",
+    projectType: "personal" as const,
   },
   {
     title: "HR System – Water District Villasis",
@@ -42,6 +44,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/Waterdistrict",
     image: "https://picsum.photos/id/201/800/600",
+    projectType: "personal" as const,
   },
   {
     title: "Digital Serenity – Admin Side",
@@ -50,6 +53,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/DigitalSerenityAdmin",
     image: "https://picsum.photos/id/251/800/600",
+    projectType: "personal" as const,
   },
 ];
 
@@ -94,8 +98,10 @@ const fallbackSettings = {
 const hasSupabaseConfig = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 );
+const experienceStartYear = 2024;
 
 type ThemeMode = "light" | "dark" | "amoled";
+type ProjectType = "client" | "personal";
 
 const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Light", icon: Sun },
@@ -106,7 +112,10 @@ const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
 export default function Portfolio() {
   const reduceMotion = useReducedMotion();
   const currentYear = new Date().getFullYear();
+  const yearsExperience = Math.max(0, currentYear - experienceStartYear);
   const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
+  const [projectType, setProjectType] = useState<ProjectType>("personal");
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const [skills, setSkills] = useState(fallbackSkills);
   const [experiences, setExperiences] = useState(fallbackExperiences);
   const [settings, setSettings] = useState(fallbackSettings);
@@ -131,7 +140,7 @@ export default function Portfolio() {
 
     const supabase = createClient();
     Promise.all([
-      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url").eq("published", true).order("sort_order"),
+      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, project_type").eq("published", true).order("sort_order"),
       supabase.from("skills").select("label, icon").eq("published", true).order("sort_order"),
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
       supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
@@ -139,7 +148,7 @@ export default function Portfolio() {
       if (projectsResult.error) {
         console.error("Unable to load projects from Supabase:", projectsResult.error.message);
       } else {
-        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url })));
+        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url, projectType: project.project_type ?? "personal" })));
       }
       if (skillsResult.data?.length) setSkills(skillsResult.data);
       if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
@@ -217,11 +226,10 @@ export default function Portfolio() {
     <>
       {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-violet-600 rounded-2xl flex items-center justify-center font-bold text-2xl">JB</div>
-            <span className="text-2xl font-semibold tracking-tight">{settings.display_name}</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between md:justify-center md:gap-20">
+          <a href="/" aria-label="Go to homepage" className="flex items-center gap-3">
+            <div className="brand-logo w-9 h-9 bg-violet-600 rounded-2xl flex items-center justify-center font-bold text-2xl text-white">JB</div>
+          </a>
 
           <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
@@ -329,7 +337,7 @@ export default function Portfolio() {
                 className="rounded-3xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
-                <div className="text-5xl font-bold">{settings.years_experience}</div>
+                <div className="text-5xl font-bold">{yearsExperience}+</div>
                 <div className="text-zinc-400">years experience</div>
               </div>
             </div>
@@ -341,18 +349,26 @@ export default function Portfolio() {
       <section id="skills" className="py-24 bg-zinc-900">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-5xl font-bold text-center mb-16">Skills & Technologies</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {skills.map((skill, i) => {
-              const Icon = skillIconMap[skill.icon as keyof typeof skillIconMap] ?? Code2;
+          <div className="space-y-6">
+            {[skills.slice(0, 4), skills.slice(4, 8)].map((row, rowIndex) => {
+              const repeatedRow = [...row, ...row];
               return (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.05 }}
-                className="glass p-8 rounded-3xl flex flex-col items-center text-center"
-              >
-                <Icon size={48} className="mb-6 text-violet-400" />
-                <div className="font-medium text-xl">{skill.label}</div>
-              </motion.div>
+                <div key={rowIndex} className="skills-marquee" aria-label={`${rowIndex === 0 ? "Primary" : "Additional"} skills`}>
+                  <div className={`skills-marquee-track ${rowIndex === 0 ? "skills-marquee-right" : "skills-marquee-left"}`}>
+                    {repeatedRow.map((skill, index) => {
+                      const Icon = skillIconMap[skill.icon as keyof typeof skillIconMap] ?? Code2;
+                      return (
+                        <motion.div
+                          key={`${rowIndex}-${index}`}
+                          className="skills-card glass flex w-[240px] shrink-0 flex-col items-center rounded-3xl p-8 text-center md:w-[260px]"
+                        >
+                          <Icon size={48} className="mb-6 text-violet-400" />
+                          <div className="font-medium text-xl">{skill.label}</div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -363,14 +379,21 @@ export default function Portfolio() {
       <section id="projects" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex justify-between items-end mb-12">
-            <h2 className="text-5xl font-bold">Featured Projects</h2>
-            <a href="https://github.com/keenden1" target="_blank" className="flex items-center gap-2 text-violet-400 hover:text-violet-300">
-              All projects on GitHub <ExternalLink size={18} />
-            </a>
+            <h2 className="text-5xl font-bold">Projects</h2>
+            <div className="flex items-center gap-2">
+              {(["client", "personal"] as const).map((type) => (
+                <button key={type} type="button" onClick={() => { setProjectType(type); setShowAllProjects(false); }} className={`rounded-xl px-4 py-2 text-sm transition ${projectType === type ? "bg-violet-600 text-white" : "text-violet-400 hover:bg-white/5"}`}>
+                  {type === "client" ? "Client projects" : "Personal projects"}
+                </button>
+              ))}
+              <a href="https://github.com/keenden1" target="_blank" aria-label="View GitHub projects" className="text-violet-400 hover:text-violet-300">
+                <ExternalLink size={18} />
+              </a>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {projects.map((project, index) => (
+            {projects.filter((project) => project.projectType === projectType).slice(0, showAllProjects ? projects.length : 4).map((project, index) => (
               <motion.div
                 key={index}
                 initial={reduceMotion ? false : { opacity: 0, y: 24 }}
@@ -425,6 +448,17 @@ export default function Portfolio() {
               </motion.div>
             ))}
           </div>
+          {projects.filter((project) => project.projectType === projectType).length > 4 && (
+            <div className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllProjects((showAll) => !showAll)}
+                className="rounded-2xl border border-white/30 px-6 py-3 font-medium transition hover:bg-white/5"
+              >
+                {showAllProjects ? "Show fewer projects" : "Show more projects"}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -511,7 +545,7 @@ export default function Portfolio() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 py-5 rounded-2xl text-lg font-semibold hover:scale-[1.02] transition disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
+              className="contact-submit w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 py-5 rounded-2xl text-lg font-semibold text-white hover:scale-[1.02] transition disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

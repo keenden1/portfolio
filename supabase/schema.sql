@@ -15,9 +15,14 @@ create table if not exists public.projects (
   image_url text not null default '',
   sort_order integer not null default 0,
   published boolean not null default true,
+  project_type text not null default 'personal' check (project_type in ('client', 'personal')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.projects add column if not exists project_type text not null default 'personal';
+alter table public.projects drop constraint if exists projects_project_type_check;
+alter table public.projects add constraint projects_project_type_check check (project_type in ('client', 'personal'));
 
 create table if not exists public.skills (
   id uuid primary key default gen_random_uuid(),
