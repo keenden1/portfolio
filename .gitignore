@@ -29,3 +29,6 @@ npm-debug.log*
 # editor
 .vscode/
 .idea/
+
+# local Supabase schema
+supabase/schema.sql

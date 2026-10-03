@@ -118,6 +118,18 @@ body {
   color: #ffffff !important;
 }
 
+[data-theme="light"] .bg-violet-600 {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .admin-action-edit {
+  color: #6d28d9 !important;
+}
+
+[data-theme="light"] .admin-action-delete {
+  color: #dc2626 !important;
+}
+
 [data-theme="light"] input,
 [data-theme="light"] textarea {
   background: rgba(255, 255, 255, 0.78) !important;

@@ -4,8 +4,12 @@ import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import ProjectGallery from "./ProjectGallery";
+import AboutPhoto from "./AboutPhoto";
+import { defaultAboutPhoto } from "@/lib/about-photo";
+import { projectImageUrls } from "@/lib/project-gallery";
 import {
-  Menu, X, Github, Linkedin, Mail, ExternalLink,
+  Menu, X, Github, Linkedin, Mail, ExternalLink, Images,
   Download, Code2, Smartphone, Database, Globe, Sun, Moon, Sparkles
 } from "lucide-react";
 
@@ -26,6 +30,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/Restioria",
     image: "https://picsum.photos/id/1015/800/600",
+    images: ["https://picsum.photos/id/1015/800/600"],
     projectType: "personal" as const,
   },
   {
@@ -35,6 +40,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/humanrights",
     image: "https://picsum.photos/id/106/800/600",
+    images: ["https://picsum.photos/id/106/800/600"],
     projectType: "personal" as const,
   },
   {
@@ -44,6 +50,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/Waterdistrict",
     image: "https://picsum.photos/id/201/800/600",
+    images: ["https://picsum.photos/id/201/800/600"],
     projectType: "personal" as const,
   },
   {
@@ -53,6 +60,7 @@ const fallbackProjects = [
     live: "#",
     github: "https://github.com/keenden1/DigitalSerenityAdmin",
     image: "https://picsum.photos/id/251/800/600",
+    images: ["https://picsum.photos/id/251/800/600"],
     projectType: "personal" as const,
   },
 ];
@@ -76,6 +84,7 @@ const fallbackExperiences = [
 const skillIconMap = { Code2, Smartphone, Database, Globe };
 
 const fallbackSettings = {
+  ...defaultAboutPhoto,
   display_name: "Jimmy Bautista",
   hero_title: "Hi, I'm Jimmy R. Bautista Jr.",
   hero_highlight: "exceptional",
@@ -85,6 +94,7 @@ const fallbackSettings = {
   about_paragraph_1: "I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.",
   about_paragraph_2: "I specialize in React, Next.js, TypeScript, and modern backend technologies. My focus is on performance, beautiful interfaces, and building products people love to use.",
   about_paragraph_3: "When I'm not coding, you'll find me exploring new design trends, contributing to open source, or capturing street photography.",
+  resume_url: "/JimmyBautista_Resume.pdf",
   years_experience: "2+",
   contact_heading: "Let's build something great together",
   contact_description: "Currently open to new opportunities and interesting projects.",
@@ -101,7 +111,7 @@ const hasSupabaseConfig = Boolean(
 const experienceStartYear = 2024;
 
 type ThemeMode = "light" | "dark" | "amoled";
-type ProjectType = "client" | "personal";
+type ProjectType = "all" | "client" | "personal";
 
 const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Light", icon: Sun },
@@ -114,7 +124,7 @@ export default function Portfolio() {
   const currentYear = new Date().getFullYear();
   const yearsExperience = Math.max(0, currentYear - experienceStartYear);
   const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
-  const [projectType, setProjectType] = useState<ProjectType>("personal");
+  const [projectType, setProjectType] = useState<ProjectType>("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [skills, setSkills] = useState(fallbackSkills);
   const [experiences, setExperiences] = useState(fallbackExperiences);
@@ -122,6 +132,7 @@ export default function Portfolio() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("dark");
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [gallery, setGallery] = useState<{ title: string; images: string[] } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
 
@@ -140,7 +151,7 @@ export default function Portfolio() {
 
     const supabase = createClient();
     Promise.all([
-      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, project_type").eq("published", true).order("sort_order"),
+      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, image_urls, project_type").eq("published", true).order("sort_order"),
       supabase.from("skills").select("label, icon").eq("published", true).order("sort_order"),
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
       supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
@@ -148,7 +159,7 @@ export default function Portfolio() {
       if (projectsResult.error) {
         console.error("Unable to load projects from Supabase:", projectsResult.error.message);
       } else {
-        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: project.image_url, projectType: project.project_type ?? "personal" })));
+        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: projectImageUrls(project.image_urls, project.image_url)[0] ?? "", images: projectImageUrls(project.image_urls, project.image_url), projectType: project.project_type ?? "personal" })));
       }
       if (skillsResult.data?.length) setSkills(skillsResult.data);
       if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
@@ -227,7 +238,7 @@ export default function Portfolio() {
       {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between md:justify-center md:gap-20">
-          <a href="/" aria-label="Go to homepage" className="flex items-center gap-3">
+          <a href="#top" aria-label="Back to top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center gap-3">
             <div className="brand-logo w-9 h-9 bg-violet-600 rounded-2xl flex items-center justify-center font-bold text-2xl text-white">JB</div>
           </a>
 
@@ -270,7 +281,7 @@ export default function Portfolio() {
       </nav>
 
       {/* HERO */}
-      <section className="min-h-screen flex items-center pt-20 px-6">
+      <motion.section id="top" className="min-h-screen flex items-center pt-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -308,10 +319,10 @@ export default function Portfolio() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ABOUT */}
-      <section id="about" className="py-24 border-t border-white/10">
+      <motion.section id="about" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24 border-t border-white/10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
@@ -329,13 +340,7 @@ export default function Portfolio() {
               </div>
             </div>
             <div className="relative">
-              <img 
-                src="https://picsum.photos/id/64/600/700" 
-                alt="Jimmy Bautista"
-                loading="lazy"
-                decoding="async"
-                className="rounded-3xl shadow-2xl w-full"
-              />
+              <AboutPhoto settings={settings} className="shadow-2xl w-full" />
               <div className="absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
                 <div className="text-5xl font-bold">{yearsExperience}+</div>
                 <div className="text-zinc-400">years experience</div>
@@ -343,10 +348,10 @@ export default function Portfolio() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* SKILLS */}
-      <section id="skills" className="py-24 bg-zinc-900">
+      <motion.section id="skills" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24 bg-zinc-900">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-5xl font-bold text-center mb-16">Skills & Technologies</h2>
           <div className="space-y-6">
@@ -373,27 +378,24 @@ export default function Portfolio() {
             })}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* PROJECTS */}
-      <section id="projects" className="py-24">
+      <motion.section id="projects" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex justify-between items-end mb-12">
             <h2 className="text-5xl font-bold">Projects</h2>
             <div className="flex items-center gap-2">
-              {(["client", "personal"] as const).map((type) => (
+              {(["all", "client", "personal"] as const).map((type) => (
                 <button key={type} type="button" onClick={() => { setProjectType(type); setShowAllProjects(false); }} className={`rounded-xl px-4 py-2 text-sm transition ${projectType === type ? "bg-violet-600 text-white" : "text-violet-400 hover:bg-white/5"}`}>
-                  {type === "client" ? "Client projects" : "Personal projects"}
+                  {type === "all" ? "All projects" : type === "client" ? "Professional projects" : "Personal projects"}
                 </button>
               ))}
-              <a href="https://github.com/keenden1" target="_blank" aria-label="View GitHub projects" className="text-violet-400 hover:text-violet-300">
-                <ExternalLink size={18} />
-              </a>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {projects.filter((project) => project.projectType === projectType).slice(0, showAllProjects ? projects.length : 4).map((project, index) => (
+            {projects.filter((project) => projectType === "all" || project.projectType === projectType).slice(0, showAllProjects ? projects.length : 4).map((project, index) => (
               <motion.div
                 key={index}
                 initial={reduceMotion ? false : { opacity: 0, y: 24 }}
@@ -403,28 +405,15 @@ export default function Portfolio() {
                 transition={reduceMotion ? undefined : { duration: 0.55, delay: index * 0.08, ease: "easeOut" }}
                 className="project-card glass rounded-3xl overflow-hidden group"
               >
-                <button
+                {project.images.length > 0 ? <button
                   type="button"
-                  aria-label={`Preview ${project.title} image`}
-                  onClick={() => Swal.fire({
-                    title: project.title,
-                    imageUrl: project.image,
-                    imageAlt: project.title,
-                    showCloseButton: true,
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    allowEscapeKey: true,
-                    background: "#18181b",
-                    color: "#ffffff",
-                    backdrop: "rgba(0, 0, 0, 0.78)",
-                    width: "min(90vw, 1000px)",
-                    imageWidth: "100%",
-                    imageHeight: "auto",
-                  })}
-                  className="block w-full cursor-zoom-in border-0 bg-transparent p-0"
+                  aria-label={`View ${project.title} gallery, ${project.images.length} photos`}
+                  aria-haspopup="dialog"
+                  onClick={() => setGallery({ title: project.title, images: project.images })}
+                  className="project-gallery-trigger"
                 >
                   <img loading="lazy" decoding="async" src={project.image} alt={project.title} className="h-64 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
-                </button>
+                </button> : <div className="flex h-64 items-center justify-center bg-white/5 text-zinc-400"><Images size={36} aria-label="No project photos" /></div>}
                 
                 <div className="p-8">
                   <h3 className="text-3xl font-semibold mb-3">{project.title}</h3>
@@ -436,19 +425,16 @@ export default function Portfolio() {
                     ))}
                   </div>
 
-                  <div className="flex gap-4">
-                    <a href={project.live} target="_blank" className="flex-1 flex items-center justify-center gap-2 border border-white/30 py-3 rounded-2xl hover:bg-white/5">
+                  <div className="flex justify-center">
+                    <a href={project.live} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 border border-white/30 px-8 py-3 rounded-2xl hover:bg-white/5">
                       <ExternalLink size={18} /> Live Demo
-                    </a>
-                    <a href={project.github} target="_blank" className="flex-1 flex items-center justify-center gap-2 bg-white text-black py-3 rounded-2xl hover:bg-zinc-200">
-                      <Github size={18} /> Code
                     </a>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
-          {projects.filter((project) => project.projectType === projectType).length > 4 && (
+          {projects.filter((project) => projectType === "all" || project.projectType === projectType).length > 4 && (
             <div className="mt-10 flex justify-center">
               <button
                 type="button"
@@ -460,10 +446,10 @@ export default function Portfolio() {
             </div>
           )}
         </div>
-      </section>
+      </motion.section>
 
       {/* EXPERIENCE */}
-      <section id="experience" className="py-24 border-t border-white/10">
+      <motion.section id="experience" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24 border-t border-white/10">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-5xl font-bold mb-16">Experience</h2>
           
@@ -506,10 +492,10 @@ export default function Portfolio() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* CONTACT */}
-      <section id="contact" className="py-24 border-t border-white/10 bg-zinc-900">
+      <motion.section id="contact" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24 border-t border-white/10 bg-zinc-900">
         <div className="max-w-xl mx-auto px-6 text-center">
           <h2 className="text-5xl font-bold mb-6">{settings.contact_heading}</h2>
           <p className="text-xl text-zinc-400 mb-12">
@@ -563,7 +549,7 @@ export default function Portfolio() {
             Or email me directly at <a href={`mailto:${settings.email}`} className="underline">{settings.email}</a>
           </p>
         </div>
-      </section>
+      </motion.section>
 
       {/* FOOTER */}
       <footer className="border-t border-white/10 py-12">
@@ -577,6 +563,8 @@ export default function Portfolio() {
           <div>{settings.made_with}</div>
         </div>
       </footer>
+
+      {gallery && <ProjectGallery title={gallery.title} images={gallery.images} onClose={() => setGallery(null)} />}
     </>
   );
 }

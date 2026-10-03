@@ -1,0 +1,30 @@
+.project-gallery-trigger { position: relative; display: block; width: 100%; overflow: hidden; cursor: zoom-in; text-align: left; }
+.project-gallery-trigger:focus-visible { outline: 3px solid #c4b5fd; outline-offset: -4px; }
+.project-gallery-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: #080810d9; backdrop-filter: blur(10px); overflow-y: auto; }
+.project-gallery { --gallery-bg: #191a23; --gallery-stage: #111218; --gallery-fg: #efeff5; --gallery-muted: #b4b4c4; --gallery-line: #393943; --gallery-accent: #bba2ff; width: min(1100px, 100%); max-height: calc(100dvh - 48px); display: flex; flex-direction: column; border: 1px solid var(--gallery-line); border-radius: 20px; background: var(--gallery-bg); color: var(--gallery-fg); box-shadow: 0 24px 100px #0006; overflow: auto; color-scheme: dark; }
+[data-theme="light"] .project-gallery { --gallery-bg: #fff; --gallery-stage: #f1f2f5; --gallery-fg: #20232d; --gallery-muted: #626a79; --gallery-line: #d6d9e1; --gallery-accent: #6d28d9; color-scheme: light; }
+[data-theme="amoled"] .project-gallery { --gallery-bg: #000; --gallery-stage: #000; --gallery-fg: #e8e8ec; --gallery-muted: #acacb5; --gallery-line: #303036; }
+.project-gallery header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--gallery-line); flex-shrink: 0; }
+.project-gallery h2 { font-size: 18px; font-weight: 600; margin-top: 4px; }
+.project-gallery-eyebrow { font-size: 9px; letter-spacing: 1.7px; color: var(--gallery-muted); }
+.project-gallery button { flex-shrink: 0; }
+.project-gallery button:focus-visible { outline: 3px solid var(--gallery-accent); outline-offset: 3px; }
+.project-gallery header > button { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--gallery-line); border-radius: 50%; }
+.project-gallery header > button:hover { background: var(--gallery-stage); }
+.project-gallery-figure { min-height: 0; }
+.project-gallery-stage { position: relative; display: flex; align-items: center; justify-content: center; height: min(57dvh, 650px); min-height: 140px; background: var(--gallery-stage); touch-action: pan-y pinch-zoom; }
+.project-gallery-stage > img { width: 100%; height: 100%; object-fit: contain; }
+.project-gallery-stage > button { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #ffffff50; border-radius: 50%; background: #111218dd; color: #fff; }
+.project-gallery-stage > button:hover { background: #6d28d9; }
+.project-gallery-prev { left: 14px; }
+.project-gallery-next { right: 14px; }
+.project-gallery figcaption { display: flex; justify-content: space-between; gap: 16px; padding: 13px 24px; color: var(--gallery-muted); font-size: 12px; }
+.project-gallery-thumbnails { position: relative; display: flex; flex-shrink: 0; gap: 10px; overflow-x: auto; padding: 5px 24px 12px; }
+.project-gallery-thumbnails button { width: 86px; height: 58px; border: 2px solid var(--gallery-line); border-radius: 7px; overflow: hidden; opacity: .65; }
+.project-gallery-thumbnails button[aria-pressed="true"] { border-color: var(--gallery-accent); opacity: 1; }
+.project-gallery-thumbnails button:hover { opacity: 1; }
+.project-gallery-thumbnails img { width: 100%; height: 100%; object-fit: cover; }
+.project-gallery-hint { padding: 0 24px 15px; color: var(--gallery-muted); font-size: 10px; text-align: center; }
+.project-gallery-error { text-align: center; color: var(--gallery-muted); display: grid; justify-items: center; gap: 12px; }
+.project-gallery-error button { color: var(--gallery-accent); text-decoration: underline; }
+@media (max-width: 600px) { .project-gallery-backdrop { padding: 10px; } .project-gallery { border-radius: 14px; max-height: calc(100dvh - 20px); } .project-gallery header { padding: 15px; gap: 12px; } .project-gallery h2 { font-size: 15px; } .project-gallery figcaption { padding: 12px 16px; } .project-gallery-thumbnails { padding-left: 16px; padding-right: 16px; } .project-gallery-stage { height: 48dvh; } }
