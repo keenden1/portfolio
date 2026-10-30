@@ -191,6 +191,18 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+[data-theme="dark"] .experience-card,
+[data-theme="amoled"] .experience-card {
+  background: #323239;
+  color: #ffffff;
+  border: 1px solid #52525b;
+}
+
+[data-theme="dark"] .experience-card-label,
+[data-theme="amoled"] .experience-card-label {
+  color: #e4e4e7;
+}
+
 .project-card {
   transition: box-shadow 300ms ease, border-color 180ms ease;
 }

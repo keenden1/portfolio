@@ -100,8 +100,7 @@ const fallbackSettings = {
   contact_description: "Currently open to new opportunities and interesting projects.",
   email: "bautistajimmy.dev@gmail.com",
   github_url: "https://github.com/keenden1",
-  linkedin_url: "https://linkedin.com",
-  twitter_url: "https://twitter.com",
+  facebook_url: "https://www.facebook.com",
   made_with: "Made with ❤️ and Next.js 15",
 };
 
@@ -131,20 +130,28 @@ export default function Portfolio() {
   const [settings, setSettings] = useState(fallbackSettings);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [themeReady, setThemeReady] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [gallery, setGallery] = useState<{ title: string; images: string[] } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("portfolio-theme") as ThemeMode | null;
+    const savedTheme = document.documentElement.dataset.theme as ThemeMode | undefined;
     if (savedTheme && themeOptions.some((option) => option.value === savedTheme)) setTheme(savedTheme);
+    setThemeReady(true);
   }, []);
 
   useEffect(() => {
+    if (!themeReady) return;
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("portfolio-theme", theme);
-  }, [theme]);
+    document.documentElement.classList.toggle("dark", theme !== "light");
+    try {
+      window.localStorage.setItem("portfolio-theme", theme);
+    } catch {
+      // Keep theme switching available when browser storage is disabled.
+    }
+  }, [theme, themeReady]);
 
   useEffect(() => {
     if (!hasSupabaseConfig) return;
@@ -341,9 +348,9 @@ export default function Portfolio() {
             </div>
             <div className="relative">
               <AboutPhoto settings={settings} className="shadow-2xl w-full" />
-              <div className="absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
+              <div className="experience-card absolute -bottom-6 -right-6 glass rounded-3xl p-8 max-w-[220px]">
                 <div className="text-5xl font-bold">{yearsExperience}+</div>
-                <div className="text-zinc-400">years experience</div>
+                <div className="experience-card-label text-zinc-400">years experience</div>
               </div>
             </div>
           </div>
@@ -556,9 +563,8 @@ export default function Portfolio() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-zinc-500">
           <div>© {currentYear} {settings.display_name}. All rights reserved.</div>
           <div className="flex gap-8">
-            <a href={settings.github_url} target="_blank">GitHub</a>
-            <a href={settings.linkedin_url} target="_blank">LinkedIn</a>
-            <a href={settings.twitter_url} target="_blank">Twitter</a>
+            <a href={settings.github_url} target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer">Facebook</a>
           </div>
           <div>{settings.made_with}</div>
         </div>

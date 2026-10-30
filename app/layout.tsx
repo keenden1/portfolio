@@ -17,7 +17,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+              var theme = "dark";
+              try {
+                var saved = localStorage.getItem("portfolio-theme");
+                if (["light", "dark", "amoled"].includes(saved)) theme = saved;
+              } catch (_) {}
+              document.documentElement.dataset.theme = theme;
+              document.documentElement.classList.toggle("dark", theme !== "light");
+            })();`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} bg-zinc-950 text-white`}>
         {children}
       </body>
