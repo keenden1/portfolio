@@ -244,7 +244,21 @@ select option {
 }
 
 .skills-card {
+  height: 190px;
+  min-height: 190px;
+  box-sizing: border-box;
   transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.skills-card > svg {
+  flex-shrink: 0;
+}
+
+.skills-card > div {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .skills-card:hover,

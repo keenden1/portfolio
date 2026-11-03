@@ -376,6 +376,7 @@ export default function Portfolio() {
                         <li
                           key={`${skill.label}-${index}`}
                           aria-hidden={index >= group.skills.length ? true : undefined}
+                          style={{ height: 190, minHeight: 190, maxHeight: 190 }}
                           className="skills-card glass flex w-[240px] shrink-0 flex-col items-center justify-center rounded-3xl px-6 py-8 text-center md:w-[260px]"
                         >
                           <Icon size={44} aria-hidden="true" className="mb-5 text-violet-400" />
