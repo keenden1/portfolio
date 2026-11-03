@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { getSkillCategory, skillCategories } from "@/lib/skill-categories";
 import ProjectGallery from "./ProjectGallery";
 import AboutPhoto from "./AboutPhoto";
 import { defaultAboutPhoto } from "@/lib/about-photo";
@@ -72,8 +73,6 @@ const fallbackSkills = [
   { icon: "Smartphone", label: "Java & Android Studio" },
   { icon: "Code2", label: "REST APIs & Backend" },
   { icon: "Database", label: "MySQL & SQL" },
-  { icon: "Smartphone", label: "Mobile App Development" },
-  { icon: "Globe", label: "Full-Stack Development" },
 ];
 
 const fallbackExperiences = [
@@ -100,7 +99,7 @@ const fallbackSettings = {
   contact_description: "Currently open to new opportunities and interesting projects.",
   email: "bautistajimmy.dev@gmail.com",
   github_url: "https://github.com/keenden1",
-  facebook_url: "https://www.facebook.com",
+  facebook_url: "https://www.facebook.com/jimjimyaw",
   made_with: "Made with ❤️ and Next.js 15",
 };
 
@@ -125,7 +124,12 @@ export default function Portfolio() {
   const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
   const [projectType, setProjectType] = useState<ProjectType>("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
-  const [skills, setSkills] = useState(fallbackSkills);
+  const [skills, setSkills] = useState<(typeof fallbackSkills[number] & { category?: string | null })[]>(fallbackSkills);
+  const technologySkills = skills.filter((skill) => !/^(Mobile App Development|Full-Stack Development)$/i.test(skill.label.trim()));
+  const skillGroups = skillCategories.map((category) => ({
+    title: category.label,
+    skills: technologySkills.filter((skill) => getSkillCategory(skill) === category.value),
+  }));
   const [experiences, setExperiences] = useState(fallbackExperiences);
   const [settings, setSettings] = useState(fallbackSettings);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -159,7 +163,7 @@ export default function Portfolio() {
     const supabase = createClient();
     Promise.all([
       supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, image_urls, project_type").eq("published", true).order("sort_order"),
-      supabase.from("skills").select("label, icon").eq("published", true).order("sort_order"),
+      supabase.from("skills").select("*").eq("published", true).order("sort_order"),
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
       supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
     ]).then(([projectsResult, skillsResult, experiencesResult, settingsResult]) => {
@@ -361,28 +365,28 @@ export default function Portfolio() {
       <motion.section id="skills" initial={reduceMotion ? false : { opacity: 0, y: 36 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={reduceMotion ? undefined : { duration: 0.7, ease: "easeOut" }} className="py-24 bg-zinc-900">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-5xl font-bold text-center mb-16">Skills & Technologies</h2>
-          <div className="space-y-6">
-            {[skills.slice(0, 4), skills.slice(4, 8)].map((row, rowIndex) => {
-              const repeatedRow = [...row, ...row];
-              return (
-                <div key={rowIndex} className="skills-marquee" aria-label={`${rowIndex === 0 ? "Primary" : "Additional"} skills`}>
-                  <div className={`skills-marquee-track ${rowIndex === 0 ? "skills-marquee-right" : "skills-marquee-left"}`}>
-                    {repeatedRow.map((skill, index) => {
+          <div className="space-y-10">
+            {skillGroups.filter((group) => group.skills.length > 0).map((group, groupIndex) => (
+                <div key={group.title}>
+                  <div className="skills-marquee" tabIndex={0} role="region" aria-label={`${group.title} carousel`}>
+                  <ul className={`skills-marquee-track ${groupIndex === 0 ? "skills-marquee-right" : ""}`}>
+                    {Array.from({ length: 2 * Math.max(2, Math.ceil(6 / group.skills.length)) }, () => group.skills).flat().map((skill, index) => {
                       const Icon = skillIconMap[skill.icon as keyof typeof skillIconMap] ?? Code2;
                       return (
-                        <motion.div
-                          key={`${rowIndex}-${index}`}
-                          className="skills-card glass flex w-[240px] shrink-0 flex-col items-center rounded-3xl p-8 text-center md:w-[260px]"
+                        <li
+                          key={`${skill.label}-${index}`}
+                          aria-hidden={index >= group.skills.length ? true : undefined}
+                          className="skills-card glass flex w-[240px] shrink-0 flex-col items-center justify-center rounded-3xl px-6 py-8 text-center md:w-[260px]"
                         >
-                          <Icon size={48} className="mb-6 text-violet-400" />
-                          <div className="font-medium text-xl">{skill.label}</div>
-                        </motion.div>
+                          <Icon size={44} aria-hidden="true" className="mb-5 text-violet-400" />
+                          <div className="font-medium text-xl break-words">{skill.label}</div>
+                        </li>
                       );
                     })}
+                  </ul>
                   </div>
                 </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       </motion.section>
@@ -559,14 +563,16 @@ export default function Portfolio() {
       </motion.section>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10 py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-zinc-500">
-          <div>© {currentYear} {settings.display_name}. All rights reserved.</div>
-          <div className="flex gap-8">
-            <a href={settings.github_url} target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer">Facebook</a>
-          </div>
-          <div>{settings.made_with}</div>
+      <footer className="border-t border-white/10 py-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-3 text-sm text-zinc-400">
+          <p>© {currentYear} {settings.display_name}</p>
+          <nav aria-label="Footer" className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
+            <a href={settings.github_url} target="_blank" rel="noopener noreferrer" className="py-2 transition-colors hover:text-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400">GitHub <span aria-hidden="true">↗</span></a>
+            <span aria-hidden="true" className="text-zinc-500">·</span>
+            <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="py-2 transition-colors hover:text-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400">Facebook <span aria-hidden="true">↗</span></a>
+            <span aria-hidden="true" className="text-zinc-500">·</span>
+            <a href="#top" className="py-2 transition-colors hover:text-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400">Back to top <span aria-hidden="true">↑</span></a>
+          </nav>
         </div>
       </footer>
 

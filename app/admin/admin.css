@@ -224,6 +224,45 @@
 .cms-shell .cms-auth-form input:focus { border-color: var(--cms-accent); outline: 2px solid var(--cms-accent-soft); }
 .cms-shell .cms-modal form > button { background: var(--cms-primary) !important; color: var(--cms-on-primary) !important; border-radius: 8px; font-size: 12px; grid-column: 1 / -1; justify-self: end; margin-top: 12px; }
 .cms-shell .cms-modal form > button:hover { background: var(--cms-primary-hover) !important; }
+.cms-skill-intro { color: var(--cms-muted); margin: 0 0 24px; font-size: 13px; }
+.cms-skill-editor-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 32px; }
+.cms-skill-fields { min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+.cms-skill-name { display: flex; flex-direction: column; gap: 8px; }
+.cms-skill-name small { color: var(--cms-muted); font-size: 11px; }
+.cms-skill-editor legend { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.cms-skill-icons > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cms-icon-choice, .cms-category-choice { position: relative; cursor: pointer; border: 1px solid var(--cms-border); border-radius: 10px; transition: border-color 150ms, background 150ms; }
+.cms-icon-choice { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 6px; color: var(--cms-muted); font-size: 11px; }
+.cms-skill-editor input[type="radio"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.cms-icon-choice.is-selected, .cms-category-choice.is-selected { background: var(--cms-accent-soft); border-color: var(--cms-accent); color: var(--cms-accent); }
+.cms-icon-choice:hover, .cms-category-choice:hover { border-color: var(--cms-accent); }
+.cms-icon-choice:focus-within, .cms-category-choice:focus-within { outline: 2px solid var(--cms-accent); outline-offset: 3px; }
+.cms-skill-categories > div { display: grid; gap: 10px; }
+.cms-category-choice { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.cms-category-choice > svg { flex-shrink: 0; }
+.cms-category-choice strong { display: block; font-size: 12px; font-weight: 600; }
+.cms-category-choice small { display: block; color: var(--cms-muted); font-size: 10px; margin-top: 3px; }
+.cms-choice-check { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--cms-control-border); margin-left: auto; flex-shrink: 0; display: grid; place-items: center; }
+.is-selected .cms-choice-check { background: var(--cms-primary); color: var(--cms-on-primary); border-color: var(--cms-primary); }
+.cms-skill-preview { background: var(--cms-soft); border: 1px solid var(--cms-border); border-radius: 14px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-width: 0; }
+.cms-skill-preview-card { width: 100%; min-height: 175px; margin: 24px 0 18px; background: var(--cms-surface); border: 1px solid var(--cms-border); border-radius: 20px; box-shadow: 0 8px 24px #00000006; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.cms-skill-preview-card > div { color: var(--cms-accent); }
+.cms-skill-preview-card strong { font-size: 18px; font-weight: 550; overflow-wrap: anywhere; max-width: 100%; }
+.cms-skill-row-tag { font-size: 10px; color: var(--cms-accent); background: var(--cms-accent-soft); padding: 5px 10px; border-radius: 20px; }
+.cms-skill-preview > p { color: var(--cms-muted); font-size: 11px; line-height: 1.8; margin-top: 14px; }
+.cms-skill-editor-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--cms-border); margin-top: 28px; padding-top: 20px; }
+.cms-skill-editor-footer > span { font-size: 11px; color: var(--cms-muted); }
+.cms-skill-editor-footer > div { display: flex; gap: 10px; }
+.cms-skill-editor button:disabled { opacity: .5; cursor: not-allowed; }
+.cms-skill-fields:disabled { opacity: .65; }
+@media (max-width: 640px) {
+  .cms-skill-editor-layout { grid-template-columns: 1fr; gap: 20px; }
+  .cms-skill-preview { padding: 18px; }
+  .cms-skill-preview-card { min-height: 125px; margin: 14px 0; }
+  .cms-skill-preview > p { display: none; }
+  .cms-skill-editor-footer { justify-content: flex-end; }
+  .cms-skill-editor-footer > span { display: none; }
+}
 .cms-gallery-editor { min-width: 0; margin: 0; }
 .cms-gallery-editor legend { font-size: 13px; font-weight: 600; width: 100%; }
 .cms-gallery-editor legend span { float: right; color: var(--cms-muted); font-size: 11px; font-weight: 400; }
