@@ -104,7 +104,7 @@ export default function PortfolioChat(context: ChatContext) {
       </footer>
     </section>}
     <button ref={launcher} type="button" className={`portfolio-chat-launcher is-compact ${open ? "is-hidden" : ""}`} onClick={() => setOpen(true)} aria-label="Chat with portfolio assistant" aria-expanded={open} aria-controls={open ? "portfolio-chat-panel" : undefined} tabIndex={open ? -1 : 0}>
-      <Avatar /><span className="portfolio-chat-launcher-label">Chat with my assistant</span>
+      <span className="portfolio-chat-launcher-label">Chat with my assistant</span><Avatar />
     </button>
   </div>;
 }
