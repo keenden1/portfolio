@@ -59,7 +59,7 @@ export default function PortfolioChat(context: ChatContext) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ question, context, history: messages.filter((message) => !message.isError).slice(-8).map(({ role, text }) => ({ role, text })) }),
+        body: JSON.stringify({ question, history: messages.filter((message) => !message.isError).slice(-8).map(({ role, text }) => ({ role, text })) }),
       });
       const data = await response.json().catch(() => null);
       if (response.ok && data?.source === "gemini" && typeof data.text === "string" && data.text.trim()) {

@@ -1,4 +1,4 @@
-import { geminiReply } from "@/lib/gemini-chat";
+import { geminiReply, suspiciousChatInput } from "@/lib/gemini-chat";
 import { createChatBudget } from "@/lib/chat-budget";
 
 export const runtime = "nodejs";
@@ -34,15 +34,26 @@ export async function POST(request: Request) {
     }
     raw += decoder.decode();
     const body = JSON.parse(raw);
-    if (typeof body.question !== "string" || !body.question.trim() || body.question.length > 500 || !body.context || typeof body.context !== "object") return new Response(null, { status: 400 });
-    const history = Array.isArray(body.history) ? body.history.slice(-8).filter((item: { role?: unknown; text?: unknown } | null) => item && (item.role === "user" || item.role === "assistant") && typeof item.text === "string").map((item: { role: "user" | "assistant"; text: string }) => ({ role: item.role, text: item.text.slice(0, 1000) })) : [];
+    if (!body || typeof body.question !== "string" || !body.question.trim() || body.question.length > 500) return new Response(null, { status: 400 });
+    if (suspiciousChatInput(body.question)) { reason = "input_safety_check"; return errorResponse(); }
+    // The browser cannot assert what the assistant previously said or supply portfolio facts.
+    const history = Array.isArray(body.history) ? body.history.slice(-8).filter((item: { role?: unknown; text?: unknown } | null) => item && item.role === "user" && typeof item.text === "string" && !suspiciousChatInput(item.text)).map((item: { text: string }) => ({ role: "user" as const, text: item.text.slice(0, 500) })) : [];
     const budget = createChatBudget();
     if (!budget) { reason = "budget_not_configured"; return errorResponse(); }
-    const text = await geminiReply(body.question.trim(), body.context, history, {
+    // Only persisted admin rules are trusted; ignore any visitor-supplied rules.
+    let rules: string;
+    try { rules = await budget.getRules(); }
+    catch { reason = "chat_rules_unavailable"; return errorResponse(); }
+    let context;
+    try { context = await budget.getPortfolioContext(); }
+    catch { reason = "portfolio_context_unavailable"; return errorResponse(); }
+    const text = await geminiReply(body.question.trim(), context, history, {
       apiKey: process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL || "gemini-flash-latest",
       onFailure: (failure) => { reason = failure; console.warn(`[portfolio-chat] Gemini error: ${failure}`); },
       budget,
+      rules,
+      sensitiveValues: [process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""],
     });
     return text ? Response.json({ text, source: "gemini" }, { headers: { "Cache-Control": "no-store" } }) : errorResponse();
   } catch {

@@ -6,6 +6,7 @@ The chatbot tries Gemini first and uses local portfolio answers on provider erro
 network failures, or an exhausted daily token budget.
 
 1. Run `supabase/migrations/20261103010000_chat_token_budget.sql` in your Supabase SQL editor (after the base schema).
+   Then run `supabase/migrations/20261104000000_chatbot_rules.sql` to enable editable rules.
 2. Set `GEMINI_API_KEY`, `GEMINI_MODEL`, and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` or your hosting environment. The Supabase URL is the existing `NEXT_PUBLIC_SUPABASE_URL`. Keep the service-role key and Gemini key server-only.
 3. Restart the development server or redeploy.
 4. Open **Admin → Site settings → Chatbot daily token budget** to switch Gemini on/off, edit the limit, or refresh usage. Click **Save chatbot settings** to apply changes.
@@ -20,6 +21,21 @@ early after provider failures. Lowering a limit does not cancel in-flight reques
 If storage or its credentials are unavailable, the chatbot uses local replies rather
 than generating without an enforced budget. This tracks this website's requests only,
 not other applications sharing the same Gemini API key.
+
+Edit **Chatbot rules** in the same admin panel to customize Gemini's tone, language,
+and guidance. Save to apply them to subsequent requests without restarting. An empty
+field uses the default instructions. Rules are read server-side from the admin-only
+configuration and included in token accounting. Local fallback remains deterministic
+and does not interpret free-text rules.
+
+Chat safeguards load only published portfolio facts from the server, ignore browser
+claims about prior assistant replies, screen common instruction-override attempts,
+and reject provider-blocked responses, credential leaks, external URLs, and claims
+of completed actions. Failed checks use local answers. The existing 500-character
+message limit, 40 KB request limit, 30-request/minute instance cap, timeouts, and
+shared daily token budget also apply. Pattern checks reduce risk but cannot detect
+every prompt injection or factual error. The request cap is per server instance;
+use hosting-level rate limits for distributed abuse protection.
 
 A modern, responsive, and high-performance portfolio website built with Next.js 15, Tailwind CSS, and TypeScript.
 
