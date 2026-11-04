@@ -8,6 +8,7 @@ import "./admin.css";
 import ProjectGalleryEditor from "./ProjectGalleryEditor";
 import { getSkillCategory, skillCategories, type SkillCategory } from "@/lib/skill-categories";
 import AboutPhotoEditor from "./AboutPhotoEditor";
+import ChatBudgetSettings from "./ChatBudgetSettings";
 import { defaultAboutPhoto } from "@/lib/about-photo";
 import { GalleryImage, projectImageUrls, resolveGalleryImages } from "@/lib/project-gallery";
 
@@ -381,6 +382,7 @@ function AdminDashboard() {
         </section>}
         {section === "settings" && <div className="cms-settings-grid">{[{ title: "Identity & introduction", icon: Globe, fields: [["Display name", settings.display_name], ["Hero title", settings.hero_title], ["Introduction", settings.hero_description]] }, { title: "About & availability", icon: BriefcaseBusiness, fields: [["Availability", settings.availability], ["About you", settings.about_paragraph_1], ["Resume", settings.resume_url]] }, { title: "Contact & social links", icon: ExternalLink, fields: [["Email", settings.email], ["GitHub", settings.github_url], ["Facebook", settings.facebook_url]] }].map(({ title, icon: Icon, fields }) => <section className="cms-panel" key={title}><div className="cms-panel-heading"><h2><Icon size={18} />{title}</h2><button className="cms-icon-button" aria-label={`Edit ${title}`} onClick={() => addItem("settings")}><Pencil size={16} /></button></div><dl className="cms-settings-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "Not set"}</dd></div>)}</dl></section>)}</div>}
         </>}
+        {section === "settings" && <ChatBudgetSettings />}
         <footer className="cms-footer"><span>Portfolio Content Studio</span><span>Make something worth sharing.<ArrowUpRight size={13} /></span></footer>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSkillCategory, skillCategories } from "@/lib/skill-categories";
 import ProjectGallery from "./ProjectGallery";
 import AboutPhoto from "./AboutPhoto";
+import PortfolioChat from "./PortfolioChat";
 import { defaultAboutPhoto } from "@/lib/about-photo";
 import { projectImageUrls } from "@/lib/project-gallery";
 import {
@@ -415,19 +416,19 @@ export default function Portfolio() {
                 viewport={{ once: true, amount: 0.2 }}
                 whileHover={reduceMotion ? undefined : { y: -6 }}
                 transition={reduceMotion ? undefined : { duration: 0.55, delay: index * 0.08, ease: "easeOut" }}
-                className="project-card glass rounded-3xl overflow-hidden group"
+                className="project-card glass flex flex-col rounded-3xl overflow-hidden group"
               >
                 {project.images.length > 0 ? <button
                   type="button"
                   aria-label={`View ${project.title} gallery, ${project.images.length} photos`}
                   aria-haspopup="dialog"
                   onClick={() => setGallery({ title: project.title, images: project.images })}
-                  className="project-gallery-trigger"
+                  className="project-gallery-trigger shrink-0"
                 >
                   <img loading="lazy" decoding="async" src={project.image} alt={project.title} className="h-64 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]" />
                 </button> : <div className="flex h-64 items-center justify-center bg-white/5 text-zinc-400"><Images size={36} aria-label="No project photos" /></div>}
                 
-                <div className="p-8">
+                <div className="flex flex-1 flex-col p-8">
                   <h3 className="text-3xl font-semibold mb-3">{project.title}</h3>
                   <p className="text-zinc-400 mb-6">{project.desc}</p>
                   
@@ -437,7 +438,7 @@ export default function Portfolio() {
                     ))}
                   </div>
 
-                  <div className="flex justify-center">
+                  <div className="mt-auto flex justify-center">
                     <a href={project.live} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 border border-white/30 px-8 py-3 rounded-2xl hover:bg-white/5">
                       <ExternalLink size={18} /> Live Demo
                     </a>
@@ -577,6 +578,7 @@ export default function Portfolio() {
         </div>
       </footer>
 
+      <PortfolioChat settings={settings} projects={projects} skills={technologySkills} experiences={experiences} />
       {gallery && <ProjectGallery title={gallery.title} images={gallery.images} onClose={() => setGallery(null)} />}
     </>
   );

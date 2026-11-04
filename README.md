@@ -1,5 +1,26 @@
 # Jimmy Bautista's Portfolio
 
+## Chatbot configuration
+
+The chatbot tries Gemini first and uses local portfolio answers on provider errors,
+network failures, or an exhausted daily token budget.
+
+1. Run `supabase/migrations/20261103010000_chat_token_budget.sql` in your Supabase SQL editor (after the base schema).
+2. Set `GEMINI_API_KEY`, `GEMINI_MODEL`, and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` or your hosting environment. The Supabase URL is the existing `NEXT_PUBLIC_SUPABASE_URL`. Keep the service-role key and Gemini key server-only.
+3. Restart the development server or redeploy.
+4. Open **Admin → Site settings → Chatbot daily token budget** to switch Gemini on/off, edit the limit, or refresh usage. Click **Save chatbot settings** to apply changes.
+
+The default is 50,000 tokens per day; 0 enables local-only replies. The shared budget
+resets at midnight Asia/Singapore. Input, output, and thinking tokens count toward it.
+Gemini's token-count endpoint measures input before each generation flow, and database
+transactions reserve input plus the maximum output for each attempt, including retries.
+Completed responses reconcile against Gemini's reported total usage. Requests with
+unknown usage retain their reservation until the next day, so the limit can take effect
+early after provider failures. Lowering a limit does not cancel in-flight requests.
+If storage or its credentials are unavailable, the chatbot uses local replies rather
+than generating without an enforced budget. This tracks this website's requests only,
+not other applications sharing the same Gemini API key.
+
 A modern, responsive, and high-performance portfolio website built with Next.js 15, Tailwind CSS, and TypeScript.
 
 ## 🚀 Features
