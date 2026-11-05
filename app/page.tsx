@@ -271,23 +271,25 @@ export default function Portfolio() {
             </a>
           </div>
 
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
-            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
+          <div className="flex items-center gap-3 md:hidden">
+            <ThemeMenu />
+            <button type="button" aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation" onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setThemeMenuOpen(false); }}>
+              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden glass border-t border-white/10 py-6">
+          <div id="mobile-navigation" className="md:hidden glass border-t border-white/10 py-6">
             <div className="flex flex-col items-center gap-6 text-lg">
               {navLinks.map((link) => (
-                <a key={link.name} href={link.href} onClick={() => setMobileMenuOpen(false)}>
+                <a key={link.name} href={link.href} className="hover:text-violet-500 transition-colors duration-200" onClick={() => setMobileMenuOpen(false)}>
                   {link.name}
                 </a>
               ))}
-              <a href="/resume" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+              <a href="/resume" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-violet-500 transition-colors duration-200">
                 <Download /> Download Resume
               </a>
-              <ThemeMenu />
             </div>
           </div>
         )}

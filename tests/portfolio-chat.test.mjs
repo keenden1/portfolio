@@ -35,3 +35,10 @@ test("unsupported questions give an honest fallback", () => {
   assert.match(reply.text, /I can answer questions about this portfolio/);
   assert.equal(reply.link.href, "#contact");
 });
+
+test("simple ways of asking to get in touch return contact details", () => {
+  for (const question of ["Get in touch", "How can I reach you?"]) {
+    assert.equal(portfolioReply(question, context).link.href, "#contact");
+    assert.match(portfolioReply(question, context).text, /jamie@example.com/);
+  }
+});

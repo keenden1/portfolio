@@ -1,7 +1,7 @@
 import { geminiReplyWithFallbacks, suspiciousChatInput } from "@/lib/gemini-chat";
 import { createChatBudget } from "@/lib/chat-budget";
 import { saveChatExchange } from "@/lib/chat-log";
-import { shouldUseLocalReply } from "@/lib/chat-routing";
+import { shouldUseLocalReply } from "@/lib/portfolio-chat";
 
 export const runtime = "nodejs";
 
