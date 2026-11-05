@@ -17,7 +17,7 @@ export async function geminiReply(
   question: string,
   context: unknown,
   history: { role: "user" | "assistant"; text: string }[],
-  options: { apiKey: string; model: string; rules?: string; sensitiveValues?: string[]; fetcher?: typeof fetch; onFailure?: (reason: string) => void; budget?: { isEnabled: () => Promise<boolean>; reserve: (tokens: number) => Promise<string | null>; settle: (reservation: string, actual: number) => Promise<void> } },
+  options: { apiKey: string; model: string; rules?: string; signal?: AbortSignal; timeoutMs?: number; retryTransient?: boolean; sensitiveValues?: string[]; fetcher?: typeof fetch; onFailure?: (reason: string) => void; budget?: { isEnabled: () => Promise<boolean>; reserve: (tokens: number) => Promise<string | null>; settle: (reservation: string, actual: number) => Promise<void> } },
 ): Promise<string | null> {
   const fail = (reason: string) => { options.onFailure?.(reason); return null; };
   if (!options.apiKey) return fail("missing_api_key");
@@ -25,7 +25,7 @@ export async function geminiReply(
   try {
     if (options.budget && !await options.budget.isEnabled()) return fail("gemini_disabled");
     // Both attempts share one deadline so retries cannot delay local fallback.
-    const signal = AbortSignal.timeout(12000);
+    const signal = AbortSignal.any([AbortSignal.timeout(options.timeoutMs ?? 12000), ...(options.signal ? [options.signal] : [])]);
     let reservation: string | null = null;
     let reservationTokens = 0;
     const request = async () => {
@@ -69,7 +69,7 @@ export async function geminiReply(
       reservationTokens = count + payload.generationConfig.maxOutputTokens;
     }
     let response = await request();
-    if ([500, 502, 503, 504].includes(response.status)) {
+    if (options.retryTransient !== false && [500, 502, 503, 504].includes(response.status)) {
       await response.body?.cancel();
       await new Promise((resolve) => setTimeout(resolve, 600));
       signal.throwIfAborted();
@@ -92,4 +92,27 @@ export async function geminiReply(
     if (error instanceof Error && ["daily_token_limit", "budget_storage_unavailable"].includes(error.message)) return fail(error.message);
     return fail(error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError") ? "provider_timeout" : "network_or_response_error");
   }
+}
+
+
+export async function geminiReplyWithFallbacks(
+  question: string,
+  context: unknown,
+  history: { role: "user" | "assistant"; text: string }[],
+  models: string[],
+  options: Omit<Parameters<typeof geminiReply>[3], "model">,
+): Promise<{ text: string; model: string } | null> {
+  const signal = AbortSignal.any([AbortSignal.timeout(18000), ...(options.signal ? [options.signal] : [])]);
+  for (const model of [...new Set(models)].slice(0, 4)) {
+    if (signal.aborted) { options.onFailure?.("provider_timeout"); return null; }
+    let failure = "unknown_failure";
+    const text = await geminiReply(question, context, history, {
+      ...options, model, signal, timeoutMs: 6000, retryTransient: false,
+      onFailure: (reason) => { failure = reason; options.onFailure?.(reason); },
+    });
+    if (text) return { text, model };
+    // Safety, auth, disabled AI, and budget failures must not try another model.
+    if (!/^(provider_http_(404|429|500|502|503|504)|provider_timeout|network_or_response_error)$/.test(failure)) return null;
+  }
+  return null;
 }

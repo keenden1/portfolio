@@ -166,7 +166,7 @@ export default function Portfolio() {
       supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, image_urls, project_type").eq("published", true).order("sort_order"),
       supabase.from("skills").select("*").eq("published", true).order("sort_order"),
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
-      supabase.from("site_settings").select("content").eq("id", 1).maybeSingle(),
+      fetch("/api/site-settings", { cache: "no-store" }).then(async (response) => ({ data: response.ok ? await response.json() as { content: typeof fallbackSettings } : null })).catch(() => ({ data: null })),
     ]).then(([projectsResult, skillsResult, experiencesResult, settingsResult]) => {
       if (projectsResult.error) {
         console.error("Unable to load projects from Supabase:", projectsResult.error.message);
@@ -262,8 +262,9 @@ export default function Portfolio() {
             ))}
             <ThemeMenu />
             <a
-              href="/JimmyBautista_Resume.pdf"
+              href="/resume"
               target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-2 px-6 py-3 bg-white text-zinc-950 rounded-2xl font-medium hover:bg-zinc-200 transition"
             >
               <Download size={18} /> Resume
@@ -283,7 +284,7 @@ export default function Portfolio() {
                   {link.name}
                 </a>
               ))}
-              <a href="/JimmyBautista_Resume.pdf" target="_blank" className="flex items-center gap-2">
+              <a href="/resume" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                 <Download /> Download Resume
               </a>
               <ThemeMenu />

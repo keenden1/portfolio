@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
@@ -9,21 +9,23 @@ import ProjectGalleryEditor from "./ProjectGalleryEditor";
 import { getSkillCategory, skillCategories, type SkillCategory } from "@/lib/skill-categories";
 import AboutPhotoEditor from "./AboutPhotoEditor";
 import ChatBudgetSettings from "./ChatBudgetSettings";
+import ChatConversations from "./ChatConversations";
 import { defaultAboutPhoto } from "@/lib/about-photo";
 import { GalleryImage, projectImageUrls, resolveGalleryImages } from "@/lib/project-gallery";
 
-type Project = { id: string; title: string; description: string; tech: string[]; live_url: string; github_url: string; image_url: string; image_urls: string[]; sort_order: number; published: boolean; project_type: "client" | "personal" };
+type Project = { created_at?: string; id: string; title: string; description: string; tech: string[]; live_url: string; github_url: string; image_url: string; image_urls: string[]; sort_order: number; published: boolean; project_type: "client" | "personal" };
 type Skill = { category: SkillCategory; id: string; label: string; icon: string; sort_order: number; published: boolean };
 type Experience = { id: string; role: string; company: string; period: string; description: string; sort_order: number; published: boolean };
 type Settings = Record<string, string>;
 type Modal = "project" | "skill" | "experience" | "settings" | null;
 type ThemeMode = "light" | "dark" | "amoled";
-type Section = "overview" | "projects" | "skills" | "experience" | "settings";
+type Section = "overview" | "projects" | "skills" | "experience" | "conversations" | "settings";
 const navigation = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "projects", label: "Projects", icon: FolderKanban },
   { id: "skills", label: "Skills", icon: Code2 },
   { id: "experience", label: "Experience", icon: BriefcaseBusiness },
+  { id: "conversations", label: "Chat conversations", icon: Sparkles },
   { id: "settings", label: "Site settings", icon: Settings2 },
 ] as const;
 const sectionCopy: Record<Section, { title: string; description: string }> = {
@@ -31,6 +33,7 @@ const sectionCopy: Record<Section, { title: string; description: string }> = {
   projects: { title: "Projects", description: "Curate the work that tells your story." },
   skills: { title: "Skills", description: "Keep your toolkit up to date." },
   experience: { title: "Experience", description: "The roles and milestones behind your work." },
+  conversations: { title: "Chat conversations", description: "Read visitor questions and your assistant’s replies, grouped by session." },
   settings: { title: "Site settings", description: "Make every detail of your portfolio feel like you." },
 };
 
@@ -95,6 +98,19 @@ function AdminDashboard() {
   const supabase = createClient();
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [userEmail, setUserEmail] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [saving, setSaving] = useState(false); const [modal, setModal] = useState<Modal>(null); const [theme, setTheme] = useState<ThemeMode>("light"); const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [section, setSection] = useState<Section>("overview");
+  useEffect(() => {
+    const restoreSection = () => {
+      const requested = new URLSearchParams(window.location.search).get("section");
+      const next = navigation.find((item) => item.id === requested)?.id ?? "overview";
+      setSection(next);
+      setSearch("");
+      setStatusFilter("all");
+      setSidebarOpen(false);
+    };
+    restoreSection();
+    window.addEventListener("popstate", restoreSection);
+    return () => window.removeEventListener("popstate", restoreSection);
+  }, []);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -333,7 +349,16 @@ function AdminDashboard() {
   );
 
   const SelectedSkillIcon = skillIconMap[skill.icon as keyof typeof skillIconMap] ?? Code2;
-  function navigate(next: Section) { setSection(next); setSearch(""); setStatusFilter("all"); setSidebarOpen(false); }
+  function navigate(next: Section) {
+    const url = new URL(window.location.href);
+    if (next === "overview") url.searchParams.delete("section");
+    else url.searchParams.set("section", next);
+    if (url.href !== window.location.href) window.history.pushState(null, "", url);
+    setSection(next);
+    setSearch("");
+    setStatusFilter("all");
+    setSidebarOpen(false);
+  }
   function addItem(type: Exclude<Modal, null>) {
     setMessage("");
     if (type === "project") { setProject(emptyProject); setGalleryImages([]); setGalleryDirty(false); setEditingProject(null); }
@@ -352,7 +377,11 @@ function AdminDashboard() {
   const counts = { projects: projects.length, skills: skills.length, experience: experiences.length };
   const badge = (published: boolean) => <span className={`cms-badge ${published ? "is-published" : "is-draft"}`}><span />{published ? "Published" : "Draft"}</span>;
   const emptyState = (label: string, type: Exclude<Modal, null>) => <div className="cms-empty"><div className="cms-empty-icon"><Search size={25} /></div><h3>{search || statusFilter !== "all" ? "No matching content" : `Your ${label} start here`}</h3><p>{search || statusFilter !== "all" ? "Try a different search or status filter." : `Add your first ${type} to bring your portfolio to life.`}</p>{search || statusFilter !== "all" ? <button className="cms-button cms-button-secondary" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</button> : <button className="cms-button cms-button-primary" onClick={() => addItem(type)}><Plus size={16} />Add {type}</button>}</div>;
-  const renderProjects = (items: Project[]) => <div className="cms-project-list">{items.map((item) => <article key={item.id} className="cms-project-row"><div className="cms-project-cover">{item.image_url || item.image_urls?.[0] ? <img src={item.image_url || item.image_urls[0]} alt="" loading="lazy" /> : <FolderKanban size={23} />}</div><div className="cms-project-info"><button className="cms-title-button" onClick={() => editProject(item)}>{item.title}</button><p>{item.description}</p><div className="cms-project-tags"><span>{item.project_type === "client" ? "Client project" : "Personal project"}</span>{(item.tech ?? []).slice(0, 3).map((tech) => <span key={tech}>{tech}</span>)}</div></div>{badge(item.published)}<div className="cms-row-actions"><button className="cms-icon-button" aria-label={`Edit ${item.title}`} onClick={() => editProject(item)}><Pencil size={16} /></button><button className="cms-icon-button cms-delete" aria-label={`Delete ${item.title}`} onClick={() => remove("projects", item.id)}><Trash2 size={16} /></button></div></article>)}</div>;
+  const projectDate = (value?: string) => {
+    if (!value || Number.isNaN(Date.parse(value))) return null;
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Singapore" }).format(new Date(value));
+  };
+  const renderProjects = (items: Project[]) => <div className="cms-project-list">{items.map((item) => <article key={item.id} className="cms-project-row"><div className="cms-project-cover">{item.image_url || item.image_urls?.[0] ? <img src={item.image_url || item.image_urls[0]} alt="" loading="lazy" /> : <FolderKanban size={23} />}</div><div className="cms-project-info"><button className="cms-title-button" onClick={() => editProject(item)}>{item.title}</button><p>{item.description}</p><div className="cms-project-tags"><span>{item.project_type === "client" ? "Client project" : "Personal project"}</span>{(item.tech ?? []).slice(0, 3).map((tech) => <span key={tech}>{tech}</span>)}</div>{projectDate(item.created_at) && <div className="cms-project-date">Added <time dateTime={item.created_at}>{projectDate(item.created_at)}</time></div>}</div>{badge(item.published)}<div className="cms-row-actions"><button className="cms-icon-button" aria-label={`Edit ${item.title}`} onClick={() => editProject(item)}><Pencil size={16} /></button><button className="cms-icon-button cms-delete" aria-label={`Delete ${item.title}`} onClick={() => remove("projects", item.id)}><Trash2 size={16} /></button></div></article>)}</div>;
 
   return <main className="cms-shell">
     {sidebarOpen && <button className="cms-sidebar-overlay" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
@@ -366,7 +395,7 @@ function AdminDashboard() {
     <div className="cms-main">
       <header className="cms-topbar"><div className="cms-breadcrumb"><button className="cms-icon-button cms-mobile-menu" aria-label="Open navigation" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(true)}><Menu size={20} /></button><span>Workspace</span><ChevronRight size={14} /><strong>{navigation.find((item) => item.id === section)?.label}</strong></div><div className="cms-topbar-actions"><span className="cms-private"><span />Admin workspace</span><ThemeMenu /><a href="/" target="_blank" rel="noreferrer" className="cms-button cms-button-secondary cms-preview">View site<ExternalLink size={15} /></a></div></header>
       <div className="cms-content">
-        <div className="cms-page-heading"><div><span className="cms-eyebrow">{section === "overview" ? "WELCOME TO YOUR WORKSPACE" : "YOUR PORTFOLIO CONTENT"}</span><h1>{sectionCopy[section].title}</h1><p>{sectionCopy[section].description}</p></div><button className="cms-button cms-button-primary" onClick={() => addItem(section === "skills" ? "skill" : section === "experience" ? "experience" : section === "settings" ? "settings" : "project")}><Plus size={17} />{section === "skills" ? "Add skill" : section === "experience" ? "Add experience" : section === "settings" ? "Edit settings" : "Add project"}</button></div>
+        <div className="cms-page-heading"><div><span className="cms-eyebrow">{section === "overview" ? "WELCOME TO YOUR WORKSPACE" : "YOUR PORTFOLIO CONTENT"}</span><h1>{sectionCopy[section].title}</h1><p>{sectionCopy[section].description}</p></div>{section !== "conversations" && <button className="cms-button cms-button-primary" onClick={() => addItem(section === "skills" ? "skill" : section === "experience" ? "experience" : section === "settings" ? "settings" : "project")}><Plus size={17} />{section === "skills" ? "Add skill" : section === "experience" ? "Add experience" : section === "settings" ? "Edit settings" : "Add project"}</button>}</div>
         {message && !modal && <div role="status" className="cms-notice"><span>{message}</span><button aria-label="Dismiss message" onClick={() => setMessage("")}><X size={16} /></button></div>}
         {contentLoading ? <div className="cms-loading" role="status"><LoaderCircle size={22} className="animate-spin" />Loading your content…</div> : <>
         {section === "overview" && <>
@@ -380,9 +409,10 @@ function AdminDashboard() {
           {section === "experience" && (visibleExperiences.length ? <div className="cms-experience-list">{visibleExperiences.map((item) => <article key={item.id} className="cms-experience-row"><div className="cms-experience-icon"><BriefcaseBusiness size={22} /></div><div className="cms-experience-info"><span className="cms-eyebrow">{item.period}</span><h3>{item.role}</h3><strong>{item.company}</strong><p>{item.description}</p></div>{badge(item.published)}<div className="cms-row-actions"><button className="cms-icon-button" aria-label={`Edit ${item.role}`} onClick={() => { setMessage(""); setExperience(item); setEditingExperience(item.id); setModal("experience"); }}><Pencil size={16} /></button><button className="cms-icon-button cms-delete" aria-label={`Delete ${item.role}`} onClick={() => remove("experiences", item.id)}><Trash2 size={16} /></button></div></article>)}</div> : emptyState("experience", "experience"))}
           <div className="cms-panel-footer"><span>{section === "projects" ? visibleProjects.length : section === "skills" ? visibleSkills.length : visibleExperiences.length} of {counts[section]} items</span><span>Changes appear on your portfolio after saving.</span></div>
         </section>}
-        {section === "settings" && <div className="cms-settings-grid">{[{ title: "Identity & introduction", icon: Globe, fields: [["Display name", settings.display_name], ["Hero title", settings.hero_title], ["Introduction", settings.hero_description]] }, { title: "About & availability", icon: BriefcaseBusiness, fields: [["Availability", settings.availability], ["About you", settings.about_paragraph_1], ["Resume", settings.resume_url]] }, { title: "Contact & social links", icon: ExternalLink, fields: [["Email", settings.email], ["GitHub", settings.github_url], ["Facebook", settings.facebook_url]] }].map(({ title, icon: Icon, fields }) => <section className="cms-panel" key={title}><div className="cms-panel-heading"><h2><Icon size={18} />{title}</h2><button className="cms-icon-button" aria-label={`Edit ${title}`} onClick={() => addItem("settings")}><Pencil size={16} /></button></div><dl className="cms-settings-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "Not set"}</dd></div>)}</dl></section>)}</div>}
+        {section === "settings" && <div className="cms-settings-grid">{[{ title: "Identity & introduction", icon: Globe, fields: [["Display name", settings.display_name], ["Hero title", settings.hero_title], ["Introduction", settings.hero_description]] }, { title: "About & availability", icon: BriefcaseBusiness, fields: [["Availability", settings.availability], ["About you", settings.about_paragraph_1], ["Resume", settings.resume_url]] }, { title: "Contact & social links", icon: ExternalLink, fields: [["Email", settings.email], ["GitHub", settings.github_url], ["Facebook", settings.facebook_url]] }].map(({ title, icon: Icon, fields }) => <section className="cms-panel" key={title}><div className="cms-panel-heading"><h2><Icon size={18} />{title}</h2><button className="cms-icon-button" aria-label={`Edit ${title}`} onClick={() => addItem("settings")}><Pencil size={16} /></button></div><dl className="cms-settings-fields">{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{label === "Resume" && value ? <a href={value} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">Open resume PDF</a> : value || "Not set"}</dd></div>)}</dl></section>)}</div>}
         </>}
         {section === "settings" && <ChatBudgetSettings />}
+        {section === "conversations" && <ChatConversations />}
         <footer className="cms-footer"><span>Portfolio Content Studio</span><span>Make something worth sharing.<ArrowUpRight size={13} /></span></footer>
       </div>
     </div>
@@ -414,7 +444,7 @@ function AdminDashboard() {
       </form>
     </ModalBox>}
     {modal === "experience" && <ModalBox title={editingExperience ? "Edit experience" : "Add experience"} close={() => setModal(null)}><form onSubmit={(e) => { e.preventDefault(); save("experiences", { ...experience, sort_order: editingExperience ? experience.sort_order : experiences.length + 1 }, editingExperience, () => { setExperience(emptyExperience); setEditingExperience(null); }, "Experience saved."); }} className="grid gap-4 md:grid-cols-2"><label className="space-y-2"><span>Role</span><input className={input} value={experience.role} onChange={(e) => setExperience({ ...experience, role: e.target.value })} required /></label><label className="space-y-2"><span>Company</span><input className={input} value={experience.company} onChange={(e) => setExperience({ ...experience, company: e.target.value })} required /></label><label className="space-y-2"><span>Period</span><input className={input} value={experience.period} onChange={(e) => setExperience({ ...experience, period: e.target.value })} required /></label><label className="space-y-2 md:col-span-2"><span>Description</span><textarea className="w-full rounded-xl bg-white/10 px-4 py-3" value={experience.description} onChange={(e) => setExperience({ ...experience, description: e.target.value })} required /></label><button type="submit" disabled={saving} hidden={!experienceDirty} className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-70">{saving ? "Saving…" : "Save experience"}</button></form></ModalBox>}
-    {modal === "settings" && <ModalBox title="Edit site settings" close={() => { if (!saving) { setSettings(settingsInitial); setAboutPhotoFile(null); setModal(null); } }}><form onSubmit={saveSettings} className="grid gap-4 md:grid-cols-2"><AboutPhotoEditor settings={settings} file={aboutPhotoFile} onFileChange={setAboutPhotoFile} disabled={saving} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />{field("display_name", "Display name")}{field("hero_title", "Hero title")}{field("hero_highlight", "Hero highlighted word")}{field("hero_suffix", "Hero ending")}{field("availability", "Availability")}{field("hero_description", "Hero description", true)}{field("about_paragraph_1", "About paragraph 1", true)}{field("about_paragraph_2", "About paragraph 2", true)}{field("about_paragraph_3", "About paragraph 3", true)}{field("contact_heading", "Contact heading")}{field("contact_description", "Contact description", true)}{field("email", "Email")}{field("github_url", "GitHub URL")}{field("facebook_url", "Facebook URL")}{field("made_with", "Made with text")}<button type="submit" disabled={saving} hidden={!settingsDirty} className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-70 md:col-span-2">{saving ? "Saving…" : "Save site settings"}</button></form></ModalBox>}
+    {modal === "settings" && <ModalBox title="Edit site settings" close={() => { if (!saving) { setSettings(settingsInitial); setAboutPhotoFile(null); setModal(null); } }}><form onSubmit={saveSettings} className="grid gap-4 md:grid-cols-2"><AboutPhotoEditor settings={settings} file={aboutPhotoFile} onFileChange={setAboutPhotoFile} disabled={saving} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />{field("display_name", "Display name")}{field("hero_title", "Hero title")}{field("hero_highlight", "Hero highlighted word")}{field("hero_suffix", "Hero ending")}{field("availability", "Availability")}{field("resume_url", "Resume PDF URL")}{field("hero_description", "Hero description", true)}{field("about_paragraph_1", "About paragraph 1", true)}{field("about_paragraph_2", "About paragraph 2", true)}{field("about_paragraph_3", "About paragraph 3", true)}{field("contact_heading", "Contact heading")}{field("contact_description", "Contact description", true)}{field("email", "Email")}{field("github_url", "GitHub URL")}{field("facebook_url", "Facebook URL")}{field("made_with", "Made with text")}<button type="submit" disabled={saving} hidden={!settingsDirty} className="w-fit rounded-xl bg-violet-600 px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-70 md:col-span-2">{saving ? "Saving…" : "Save site settings"}</button></form></ModalBox>}
   </main>;
 }
 

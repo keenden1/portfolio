@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // Public chat uses server credentials, not the visitor's auth session.
+  if (["/api/chat", "/api/site-settings", "/resume"].includes(request.nextUrl.pathname)) return response;
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return response;
 

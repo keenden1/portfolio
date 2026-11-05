@@ -1,16 +1,23 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { defaultChatRules } from "@/lib/chat-rules";
+import { normalizeChatModels } from "@/lib/chat-models";
 
-export function createChatBudget() {
+export function createChatBudget(signal?: AbortSignal) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(4000) }) },
+    global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.any([AbortSignal.timeout(4000), ...(signal ? [signal] : [])]) }) },
   });
   return {
+    async getModels(): Promise<string[]> {
+      const { data, error } = await supabase.from("chat_config").select("model_order").eq("id", 1).single();
+      if (error?.code === "42703" || error?.code === "PGRST204") return normalizeChatModels([process.env.GEMINI_MODEL]);
+      if (error || !data) throw new Error("chat_models_unavailable");
+      return normalizeChatModels(data.model_order);
+    },
     async getPortfolioContext() {
       const results = await Promise.all([
         supabase.from("site_settings").select("content").eq("id", 1).single(),

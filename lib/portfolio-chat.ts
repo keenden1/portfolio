@@ -1,3 +1,5 @@
+import { smallTalkReply } from "./chat-routing.ts";
+
 export type ChatContext = {
   settings: { display_name: string; hero_description: string; availability: string; email: string };
   projects: { title: string; desc: string; tech: string[] }[];
@@ -8,6 +10,8 @@ export type ChatContext = {
 export type ChatReply = { text: string; link?: { label: string; href: string } };
 
 export function portfolioReply(question: string, context: ChatContext): ChatReply {
+  const smallTalk = smallTalkReply(question);
+  if (smallTalk) return smallTalk;
   const q = question.toLowerCase().trim();
   const { settings, projects, skills, experiences } = context;
   if (/\b(contact|email|hire|hiring|available|availability|freelance|price|pricing|cost|quote|rate|budget)\b/.test(q)) {

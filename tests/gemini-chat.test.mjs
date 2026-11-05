@@ -1,8 +1,75 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { geminiReply, suspiciousChatInput, unsuitableChatOutput } from "../lib/gemini-chat.ts";
+import { geminiReply, geminiReplyWithFallbacks, suspiciousChatInput, unsuitableChatOutput } from "../lib/gemini-chat.ts";
+import { validChatModels, defaultChatModels, normalizeChatModels } from "../lib/chat-models.ts";
 
 const options = { apiKey: "test-key", model: "test-model" };
+
+test("model order accepts a unique supported subset", () => {
+  assert.equal(validChatModels(defaultChatModels), true);
+  assert.equal(validChatModels([defaultChatModels[1]]), true);
+  for (const invalid of [[], null, ["unknown"], [defaultChatModels[0], defaultChatModels[0]]]) assert.equal(validChatModels(invalid), false);
+});
+
+test("overloaded primary advances to the next model and identifies the winner", async () => {
+  const attempts = [];
+  const reply = await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options, fetcher: async (url) => {
+    attempts.push(url);
+    return attempts.length === 1 ? new Response(null, { status: 503 }) : success();
+  } });
+  assert.equal(attempts.length, 2);
+  assert.match(attempts[0], /gemini-3.8-flash:/);
+  assert.match(attempts[1], /gemini-3.5-flash-lite:/);
+  assert.deepEqual(reply, { model: "gemini-3.5-flash-lite", text: "Hello!" });
+});
+
+test("quota and unavailable models advance in saved order, then return local", async () => {
+  let calls = 0;
+  const statuses = [429, 503];
+  const reply = await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options, fetcher: async () => new Response(null, { status: statuses[calls++] }) });
+  assert.equal(calls, 2);
+  assert.equal(reply, null);
+});
+
+test("safety, authentication, and exhausted budgets stop model failover", async () => {
+  for (const status of [401, 403]) {
+    let calls = 0;
+    await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options, fetcher: async () => { calls++; return new Response(null, { status }); } });
+    assert.equal(calls, 1);
+  }
+  let calls = 0;
+  await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options, fetcher: async () => { calls++; return Response.json({ promptFeedback: { blockReason: "SAFETY" } }); } });
+  assert.equal(calls, 1);
+  let reserves = 0;
+  await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options,
+    budget: { isEnabled: async () => true, reserve: async () => { reserves++; return null; }, settle: async () => {} },
+    fetcher: async (url) => { assert.match(url, /countTokens/); return Response.json({ totalTokens: 100 }); },
+  });
+  assert.equal(reserves, 1);
+});
+
+test("each fallback model counts and reserves its own tokens", async () => {
+  const amounts = [];
+  const settled = [];
+  let generation = 0;
+  let counts = 0;
+  const reply = await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options,
+    budget: { isEnabled: async () => true, reserve: async (amount) => { amounts.push(amount); return String(amounts.length); }, settle: async (id, amount) => { settled.push([id, amount]); } },
+    fetcher: async (url) => {
+      if (url.endsWith(":countTokens")) return Response.json({ totalTokens: ++counts * 100 });
+      return ++generation === 1 ? new Response(null, { status: 503 }) : success();
+    },
+  });
+  assert.equal(reply.model, defaultChatModels[1]);
+  assert.deepEqual(amounts, [1124, 1224]);
+  assert.deepEqual(settled, [["2", 150]]);
+});
+
+test("an expired shared deadline stops without contacting another model", async () => {
+  const controller = new AbortController(); controller.abort();
+  const reply = await geminiReplyWithFallbacks("Hi", {}, [], defaultChatModels, { ...options, signal: controller.signal, fetcher: async () => assert.fail("Must not contact a model after the deadline") });
+  assert.equal(reply, null);
+});
 
 test("saved owner rules enter the system instructions and token accounting", async () => {
   let counted;
@@ -193,4 +260,11 @@ test("authentication and quota errors do not trigger extra requests", async () =
     await geminiReply("Hi", {}, [], { ...options, fetcher: async () => { calls++; return new Response(null, { status }); } });
     assert.equal(calls, 1);
   }
+});
+
+test("retired models are removed without changing supported preferences", () => {
+  assert.deepEqual(normalizeChatModels(["gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"]), ["gemini-3.5-flash-lite", "gemini-3.8-flash"]);
+  assert.deepEqual(normalizeChatModels(["gemini-3.5-flash-lite"]), ["gemini-3.5-flash-lite"]);
+  assert.deepEqual(normalizeChatModels(["gemini-2.5-flash-lite"]), defaultChatModels);
+  assert.equal(validChatModels(["gemini-2.5-flash"]), false);
 });

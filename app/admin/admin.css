@@ -1,3 +1,23 @@
+.cms-chat-meta { color: var(--cms-muted); font-size: 12px; }
+.cms-chat-sessions { padding: 0 24px; }
+.cms-chat-session { border-top: 1px solid var(--cms-border); }
+.cms-chat-session summary { cursor: pointer; padding: 20px 0; overflow-wrap: anywhere; }
+.cms-chat-session summary strong { margin-left: 8px; }
+.cms-chat-session summary > span { display: block; margin-top: 6px; }
+.cms-chat-thread { padding-bottom: 24px; }
+.cms-chat-thread > p { overflow-wrap: anywhere; margin-bottom: 16px; }
+.cms-chat-exchange + .cms-chat-exchange { margin-top: 24px; }
+.cms-chat-question, .cms-chat-answer { padding: 16px; border-radius: 12px; margin-top: 8px; }
+.cms-chat-question { background: var(--cms-accent-soft); }
+.cms-chat-answer { background: var(--cms-soft); }
+.cms-chat-exchange h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.cms-chat-exchange p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cms-conversations button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 600px) {
+  .cms-conversations .cms-panel-heading, .cms-conversations .cms-panel-footer { flex-wrap: wrap; gap: 12px; }
+  .cms-chat-sessions { padding: 0 16px; }
+}
+
 .cms-shell {
   --cms-bg: #f5f6f8;
   --cms-surface: #fff;
@@ -450,3 +470,5 @@
   .cms-footer > span:last-child { display: none; }
   .cms-stat-detail { font-size: 8px; }
 }
+
+.cms-project-date { margin-top: 8px; color: var(--cms-muted); font-size: 11px; line-height: 1.5; }

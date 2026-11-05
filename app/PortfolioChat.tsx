@@ -26,6 +26,7 @@ export default function PortfolioChat(context: ChatContext) {
   const conversation = useRef<HTMLDivElement>(null);
   const pending = useRef<AbortController | null>(null);
   const sequence = useRef(0);
+  const conversationId = useRef<string | null>(null);
 
   useEffect(() => {
     return () => { pending.current?.abort(); pending.current = null; };
@@ -50,16 +51,18 @@ export default function PortfolioChat(context: ChatContext) {
     const controller = new AbortController();
     pending.current = controller;
     let reply: ChatReply = portfolioReply(question, context);
+    conversationId.current ??= crypto.randomUUID();
     setMessages((previous) => [...previous, { role: "user", text: question, id: ++sequence.current }]);
     setInput("");
     setTyping(true);
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    // Allow the server's 20-second deadline plus transport/dev compilation overhead.
+    const timeout = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ question, history: messages.filter((message) => !message.isError).slice(-8).map(({ role, text }) => ({ role, text })) }),
+        body: JSON.stringify({ question, conversationId: conversationId.current, localAnswer: reply.text, history: messages.filter((message) => !message.isError).slice(-8).map(({ role, text }) => ({ role, text })) }),
       });
       const data = await response.json().catch(() => null);
       if (response.ok && data?.source === "gemini" && typeof data.text === "string" && data.text.trim()) {
