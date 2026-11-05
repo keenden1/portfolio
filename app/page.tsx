@@ -25,84 +25,216 @@ const navLinks = [
   { name: "Contact", href: "#contact" },
 ];
 
-const fallbackProjects = [
+type PortfolioProject = { title: string; desc: string; tech: string[]; live: string; github: string; image: string; images: string[]; projectType: "client" | "personal"; builtDate?: string | null; builtEndDate?: string | null };
+
+const fallbackProjects: PortfolioProject[] = [
   {
-    title: "Restoria – Educational Platform",
-    desc: "Modern banking platform with real-time transactions, analytics, and AI insights.",
-    tech: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
-    live: "#",
-    github: "https://github.com/keenden1/Restioria",
-    image: "https://picsum.photos/id/1015/800/600",
-    images: ["https://picsum.photos/id/1015/800/600"],
-    projectType: "personal" as const,
+    "title": "Kawal Quest– Historical Game",
+    "desc": "Game About Philippine History",
+    "tech": [
+      "Next.js",
+      "TypeScript",
+      "Tailwind",
+      "Supabase"
+    ],
+    "live": "https://www.kawalquest.online/",
+    "github": "https://github.com/keenden1/Restioria",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/218582b5-3af6-428e-b748-f1ccb8e7ff12.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/218582b5-3af6-428e-b748-f1ccb8e7ff12.png"
+    ],
+    "projectType": "client",
+    "builtDate": "2026-08-01",
+    "builtEndDate": null
   },
   {
-    title: "CHRR1 – Social Media Human Rights Platform",
-    desc: "Twitter/X clone with threads, real-time chat, and AI content suggestions.",
-    tech: ["Next.js", "tRPC", "Prisma", "PostgreSQL"],
-    live: "#",
-    github: "https://github.com/keenden1/humanrights",
-    image: "https://picsum.photos/id/106/800/600",
-    images: ["https://picsum.photos/id/106/800/600"],
-    projectType: "personal" as const,
+    "title": "BW SuperBakeshop– Corporate Website",
+    "desc": "Corporate Website of BW Superbakeshop",
+    "tech": [
+      "Next.js",
+      "TypeScript",
+      "Tailwind",
+      "Supabase"
+    ],
+    "live": "https://bw-bakeshop-xi.vercel.app/",
+    "github": "https://github.com/keenden1/",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/0cbb77e3-677f-4fd8-81f9-5ae00183c278.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/0cbb77e3-677f-4fd8-81f9-5ae00183c278.png"
+    ],
+    "projectType": "personal",
+    "builtDate": "2026-02-01",
+    "builtEndDate": "2026-08-01"
   },
   {
-    title: "HR System – Water District Villasis",
-    desc: "Generate beautiful UI components with natural language.",
-    tech: ["React", "Tailwind", "Framer Motion"],
-    live: "#",
-    github: "https://github.com/keenden1/Waterdistrict",
-    image: "https://picsum.photos/id/201/800/600",
-    images: ["https://picsum.photos/id/201/800/600"],
-    projectType: "personal" as const,
+    "title": "CHRR1 – Social Media Human Rights Platform",
+    "desc": "Website for Commission on Human Rights Region 1 with threads and real-time chat.",
+    "tech": [
+      "Next.js",
+      "tRPC",
+      "Prisma",
+      "PostgreSQL"
+    ],
+    "live": "https://lightsalmon-sardine-571249.hostingersite.com/Homepage",
+    "github": "https://github.com/keenden1/humanrights",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/b2c2e1d8-74a6-488b-a4e8-4f3293891583.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/b2c2e1d8-74a6-488b-a4e8-4f3293891583.png"
+    ],
+    "projectType": "client",
+    "builtDate": "2024-08-01",
+    "builtEndDate": "2025-01-01"
   },
   {
-    title: "Digital Serenity – Admin Side",
-    desc: "Mobile-first web app that tracks and gamifies your carbon footprint.",
-    tech: ["Next.js", "TypeScript", "Mapbox"],
-    live: "#",
-    github: "https://github.com/keenden1/DigitalSerenityAdmin",
-    image: "https://picsum.photos/id/251/800/600",
-    images: ["https://picsum.photos/id/251/800/600"],
-    projectType: "personal" as const,
+    "title": "HR System",
+    "desc": "HR System of Water District Villasis ",
+    "tech": [
+      "React",
+      "Tailwind",
+      "Framer Motion"
+    ],
+    "live": "https://lime-sardine-149135.hostingersite.com/",
+    "github": "https://github.com/keenden1/Waterdistrict",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/a8f2083f-a16b-4e99-8d9c-150ebf8ea4bc.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/a8f2083f-a16b-4e99-8d9c-150ebf8ea4bc.png"
+    ],
+    "projectType": "client",
+    "builtDate": "2025-03-01",
+    "builtEndDate": "2025-07-01"
   },
+  {
+    "title": "Employee Attendance System",
+    "desc": "A robust, high-performance system to monitor and check employee attendance using JSON files stored in Supabase Cloud. Optimized for both Mobile and Web/Chrome environments.",
+    "tech": [
+      "Flutter Web",
+      "Dart",
+      "Supabase"
+    ],
+    "live": "https://attendance-app-omega-green.vercel.app/",
+    "github": "#",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/6c773a51-5175-449d-ac5c-7f22e956c3f9.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/6c773a51-5175-449d-ac5c-7f22e956c3f9.png"
+    ],
+    "projectType": "personal",
+    "builtDate": "2026-06-01",
+    "builtEndDate": "2026-07-01"
+  },
+  {
+    "title": "Contract Generator",
+    "desc": "Personal freelance service contract generator — fill a form, preview in real time, download as PDF, and send for e-signing via a shareable link",
+    "tech": [
+      "Next.js",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "live": "https://contract-app-self.vercel.app/",
+    "github": "#",
+    "image": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/d9b7dbed-6b73-4e70-90f3-37c4beb16ea5.png",
+    "images": [
+      "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/projects/d9b7dbed-6b73-4e70-90f3-37c4beb16ea5.png"
+    ],
+    "projectType": "personal",
+    "builtDate": "2026-08-01",
+    "builtEndDate": "2026-09-01"
+  }
 ];
 
 const fallbackSkills = [
-  { icon: "Code2", label: "Laravel & PHP" },
-  { icon: "Smartphone", label: "Flutter & Dart" },
-  { icon: "Database", label: "Firebase" },
-  { icon: "Smartphone", label: "Java & Android Studio" },
-  { icon: "Code2", label: "REST APIs & Backend" },
-  { icon: "Database", label: "MySQL & SQL" },
+  {
+    "icon": "Code2",
+    "label": "Laravel & PHP",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Smartphone",
+    "label": "Flutter & Dart",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Database",
+    "label": "Firebase",
+    "category": "databases_backend"
+  },
+  {
+    "icon": "Smartphone",
+    "label": "Java & Android Studio",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Code2",
+    "label": "REST APIs & Backend",
+    "category": "databases_backend"
+  },
+  {
+    "icon": "Database",
+    "label": "MySQL & SQL",
+    "category": "databases_backend"
+  },
+  {
+    "icon": "Smartphone",
+    "label": "Mobile App Development",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Globe",
+    "label": "Full-Stack Development",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Code2",
+    "label": "Python & Flask",
+    "category": "languages_frameworks"
+  },
+  {
+    "icon": "Globe",
+    "label": "Flutter Web",
+    "category": "languages_frameworks"
+  }
 ];
 
 const fallbackExperiences = [
-  { role: "Junior Full-Stack Developer", company: "Eljin Corp", period: "2026 — Present", desc: "Built design system for the Company." },
-  { role: "Freelance Full-Stack Developer", company: "Home", period: "2024 — Present", desc: "Developed client projects." },
+  {
+    "role": "Junior Full-Stack Developer",
+    "company": "Eljin Corp",
+    "period": "2026 — Present",
+    "desc": "Built design system for the Company."
+  },
+  {
+    "role": "Freelance Full-Stack Developer",
+    "company": "Home",
+    "period": "2024 — Present",
+    "desc": "Developed clients projects."
+  }
 ];
 
 const skillIconMap = { Code2, Smartphone, Database, Globe };
 
+// Snapshot of published CMS content for use when live content is unavailable.
 const fallbackSettings = {
   ...defaultAboutPhoto,
-  display_name: "Jimmy Bautista",
-  hero_title: "Hi, I'm Jimmy R. Bautista Jr.",
-  hero_highlight: "exceptional",
-  hero_suffix: " digital experiences.",
-  availability: "Available for freelance • Open to full-time roles",
-  hero_description: "Full-Stack Web Developer & UI Engineer • Turning ideas into pixel-perfect, high-performance products.",
-  about_paragraph_1: "I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.",
-  about_paragraph_2: "I specialize in React, Next.js, TypeScript, and modern backend technologies. My focus is on performance, beautiful interfaces, and building products people love to use.",
-  about_paragraph_3: "When I'm not coding, you'll find me exploring new design trends, contributing to open source, or capturing street photography.",
-  resume_url: "/JimmyBautista_Resume.pdf",
-  years_experience: "2+",
-  contact_heading: "Let's build something great together",
-  contact_description: "Currently open to new opportunities and interesting projects.",
-  email: "bautistajimmy.dev@gmail.com",
-  github_url: "https://github.com/keenden1",
-  facebook_url: "https://www.facebook.com/jimjimyaw",
-  made_with: "Made with ❤️ and Next.js 15",
+  "about_paragraph_1": "I'm a passionate full-stack developer with over 6 years of experience crafting delightful digital products.",
+  "about_paragraph_2": "I specialize in React, Next.js, TypeScript, and modern backend technologies. My focus is on performance, beautiful interfaces, and building products people love to use.",
+  "about_paragraph_3": "When I'm not coding, you'll find me exploring new design trends, contributing to open source, or capturing street photography.",
+  "display_name": "Jimmy Bautista",
+  "hero_title": "Hi, I'm Jimmy R. Bautista Jr.",
+  "hero_highlight": "exceptional",
+  "hero_suffix": " digital experiences.",
+  "availability": "Available for freelance • Open to full-time roles",
+  "hero_description": "Full-Stack Web Developer & UI Engineer • Turning ideas into pixel-perfect, high-performance products.",
+  "years_experience": "2+",
+  "contact_heading": "Let's build something great together",
+  "contact_description": "Currently open to new opportunities and interesting projects.",
+  "email": "bautistajimmy.dev@gmail.com",
+  "github_url": "https://github.com/keenden1",
+  "facebook_url": "https://www.facebook.com/jimjimyaw",
+  "made_with": "Made with ❤️ and Next.js 15",
+  "about_image_url": "https://sqbvcztlvnilfegkuvln.supabase.co/storage/v1/object/public/project-images/about/2e0c3f8d-e8ba-4e6d-8bb8-daec0c75e6df.jpg",
+  "about_image_x": "50",
+  "about_image_y": "50",
+  "about_image_zoom": "1",
+  "resume_url": "/resume"
 };
 
 const hasSupabaseConfig = Boolean(
@@ -123,7 +255,7 @@ export default function Portfolio() {
   const reduceMotion = useReducedMotion();
   const currentYear = new Date().getFullYear();
   const yearsExperience = Math.max(0, currentYear - experienceStartYear);
-  const [projects, setProjects] = useState<(typeof fallbackProjects[number] & { builtDate?: string | null; builtEndDate?: string | null })[]>(hasSupabaseConfig ? [] : fallbackProjects);
+  const [projects, setProjects] = useState<PortfolioProject[]>(fallbackProjects);
   const [projectType, setProjectType] = useState<ProjectType>("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [skills, setSkills] = useState<(typeof fallbackSkills[number] & { category?: string | null })[]>(fallbackSkills);
@@ -174,8 +306,8 @@ export default function Portfolio() {
       } else {
         setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, builtDate: project.built_date, builtEndDate: project.built_end_date, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: projectImageUrls(project.image_urls, project.image_url)[0] ?? "", images: projectImageUrls(project.image_urls, project.image_url), projectType: project.project_type ?? "personal" })));
       }
-      if (skillsResult.data?.length) setSkills(skillsResult.data);
-      if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
+      if (!skillsResult.error && skillsResult.data) setSkills(skillsResult.data);
+      if (!experiencesResult.error && experiencesResult.data) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
       if (settingsResult.data?.content) setSettings({ ...fallbackSettings, ...settingsResult.data.content });
     });
   }, []);
