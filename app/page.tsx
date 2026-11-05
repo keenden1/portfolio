@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { getSkillCategory, skillCategories } from "@/lib/skill-categories";
+import { projectPeriod } from "@/lib/project-period";
 import ProjectGallery from "./ProjectGallery";
 import AboutPhoto from "./AboutPhoto";
 import PortfolioChat from "./PortfolioChat";
@@ -122,7 +123,7 @@ export default function Portfolio() {
   const reduceMotion = useReducedMotion();
   const currentYear = new Date().getFullYear();
   const yearsExperience = Math.max(0, currentYear - experienceStartYear);
-  const [projects, setProjects] = useState(hasSupabaseConfig ? [] : fallbackProjects);
+  const [projects, setProjects] = useState<(typeof fallbackProjects[number] & { builtDate?: string | null; builtEndDate?: string | null })[]>(hasSupabaseConfig ? [] : fallbackProjects);
   const [projectType, setProjectType] = useState<ProjectType>("all");
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [skills, setSkills] = useState<(typeof fallbackSkills[number] & { category?: string | null })[]>(fallbackSkills);
@@ -163,7 +164,7 @@ export default function Portfolio() {
 
     const supabase = createClient();
     Promise.all([
-      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, image_urls, project_type").eq("published", true).order("sort_order"),
+      supabase.from("projects").select("title, description, tech, live_url, github_url, image_url, image_urls, project_type, built_date, built_end_date").eq("published", true).order("sort_order"),
       supabase.from("skills").select("*").eq("published", true).order("sort_order"),
       supabase.from("experiences").select("role, company, period, description").eq("published", true).order("sort_order"),
       fetch("/api/site-settings", { cache: "no-store" }).then(async (response) => ({ data: response.ok ? await response.json() as { content: typeof fallbackSettings } : null })).catch(() => ({ data: null })),
@@ -171,7 +172,7 @@ export default function Portfolio() {
       if (projectsResult.error) {
         console.error("Unable to load projects from Supabase:", projectsResult.error.message);
       } else {
-        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: projectImageUrls(project.image_urls, project.image_url)[0] ?? "", images: projectImageUrls(project.image_urls, project.image_url), projectType: project.project_type ?? "personal" })));
+        setProjects((projectsResult.data ?? []).map((project) => ({ title: project.title, builtDate: project.built_date, builtEndDate: project.built_end_date, desc: project.description, tech: project.tech, live: project.live_url, github: project.github_url, image: projectImageUrls(project.image_urls, project.image_url)[0] ?? "", images: projectImageUrls(project.image_urls, project.image_url), projectType: project.project_type ?? "personal" })));
       }
       if (skillsResult.data?.length) setSkills(skillsResult.data);
       if (experiencesResult.data?.length) setExperiences(experiencesResult.data.map((experience) => ({ role: experience.role, company: experience.company, period: experience.period, desc: experience.description })));
@@ -432,7 +433,7 @@ export default function Portfolio() {
                 </button> : <div className="flex h-64 items-center justify-center bg-white/5 text-zinc-400"><Images size={36} aria-label="No project photos" /></div>}
                 
                 <div className="flex flex-1 flex-col p-8">
-                  <h3 className="text-3xl font-semibold mb-3">{project.title}</h3>
+                  <h3 className="text-3xl font-semibold mb-3">{project.title}</h3>{project.builtDate && <p className="mb-3 text-sm text-zinc-400">{projectPeriod(project.builtDate, project.builtEndDate)}</p>}
                   <p className="text-zinc-400 mb-6">{project.desc}</p>
                   
                   <div className="flex flex-wrap gap-2 mb-8">
