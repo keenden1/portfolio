@@ -10,7 +10,10 @@ editor after the base schema, then deploy the updated app. The existing server-o
 Each distinct IP is counted once across all visits, starting when tracking is
 enabled. Refreshing or opening another browser on the same IP does not add to the
 total. Shared networks count as one; changing IPs may count the same person again.
-Visits to the public portfolio trigger tracking; admin-only visits do not.
+Visits to the public portfolio trigger tracking; visits while signed in as an
+admin are excluded using a server-verified session and admin membership check.
+Signed-out visits (including incognito or another browser) still count. Previously
+recorded visits remain in the total. Admin-only visits do not trigger tracking.
 This is an IP count, not a count of people or concurrent viewers. Browsers that
 block the tracking request are not counted, and bots that run JavaScript may count.
 

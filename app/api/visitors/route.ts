@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { visitorHash } from "@/lib/visitor-identity";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,14 @@ export async function POST(request: Request) {
   const hash = visitorHash(request.headers, secret, ipHeader);
   if (!hash) return new Response(null, { status: 204, headers });
   try {
+    const session = await createSessionClient();
+    const { data: { user }, error: authError } = await session.auth.getUser();
+    if (authError && authError.name !== "AuthSessionMissingError") throw authError;
+    if (user) {
+      const { data: isAdmin, error: adminError } = await session.rpc("is_admin");
+      if (adminError) throw adminError;
+      if (isAdmin === true) return new Response(null, { status: 204, headers });
+    }
     const db = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(4000) }) },
