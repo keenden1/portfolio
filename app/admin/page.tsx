@@ -11,6 +11,7 @@ import AboutPhotoEditor from "./AboutPhotoEditor";
 import { projectPeriod } from "@/lib/project-period";
 import ChatBudgetSettings from "./ChatBudgetSettings";
 import ChatConversations from "./ChatConversations";
+import VisitorCount from "./VisitorCount";
 import { defaultAboutPhoto } from "@/lib/about-photo";
 import { GalleryImage, projectImageUrls, resolveGalleryImages } from "@/lib/project-gallery";
 
@@ -400,6 +401,7 @@ function AdminDashboard() {
         {message && !modal && <div role="status" className="cms-notice"><span>{message}</span><button aria-label="Dismiss message" onClick={() => setMessage("")}><X size={16} /></button></div>}
         {contentLoading ? <div className="cms-loading" role="status"><LoaderCircle size={22} className="animate-spin" />Loading your content…</div> : <>
         {section === "overview" && <>
+          <VisitorCount />
           <div className="cms-stats">{[{ label: "Total projects", value: projects.length, detail: `${projects.filter((item) => item.published).length} published on your site`, icon: FolderKanban, target: "projects" }, { label: "Skills & tools", value: skills.length, detail: "Your growing toolkit", icon: Code2, target: "skills" }, { label: "Experience", value: experiences.length, detail: "Roles in your journey", icon: BriefcaseBusiness, target: "experience" }, { label: "Published content", value: publishedCount, detail: `${draftCount} ${draftCount === 1 ? "draft" : "drafts"} in your workspace`, icon: Globe, target: "projects" }].map(({ label, value, detail, icon: Icon, target }) => <button key={label} className="cms-stat-card" onClick={() => navigate(target as Section)}><div className="cms-stat-top"><span>{label}</span><Icon size={19} /></div><strong>{value.toString().padStart(2, "0")}</strong><div className="cms-stat-detail"><span>{detail}</span><ArrowUpRight size={16} /></div></button>)}</div>
           <section className="cms-panel"><div className="cms-panel-heading"><div><h2>Project library</h2><p>A selection of the work you’re building.</p></div><button className="cms-text-button" onClick={() => navigate("projects")}>View all<ArrowUpRight size={16} /></button></div>{projects.length ? renderProjects(projects.slice(0, 4)) : emptyState("projects", "project")}<div className="cms-panel-footer"><span>{projects.length} {projects.length === 1 ? "project" : "projects"} in your library</span><button className="cms-text-button" onClick={() => addItem("project")}><Plus size={15} />Add project</button></div></section>
 </>}

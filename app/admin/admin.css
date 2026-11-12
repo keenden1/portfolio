@@ -155,6 +155,10 @@
 .cms-delete:hover, .cms-delete:focus-visible { background: var(--cms-danger-soft); color: var(--cms-danger); }
 .cms-text-button { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 550; color: var(--cms-accent); white-space: nowrap; }
 .cms-text-button:hover { text-decoration: underline; text-underline-offset: 4px; }
+.cms-visitors { margin-bottom: 24px; }
+.cms-visitor-total { padding: 23px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px; }
+.cms-visitor-total strong { font-size: 36px; font-weight: 600; line-height: 1.2; }
+.cms-visitor-total span, .cms-visitor-total p { color: var(--cms-muted); font-size: 12px; }
 .cms-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 17px; margin-bottom: 27px; }
 .cms-stat-card { text-align: left; background: var(--cms-surface); border: 1px solid var(--cms-border); border-radius: 12px; padding: 20px; }
 .cms-stat-card:hover { border-color: var(--cms-accent); box-shadow: 0 4px 18px #00000005; }

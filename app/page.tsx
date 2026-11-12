@@ -252,6 +252,10 @@ const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
 ];
 
 export default function Portfolio() {
+  useEffect(() => {
+    // Database deduplication keeps reloads and React Strict Mode from inflating totals.
+    void fetch("/api/visitors", { method: "POST", keepalive: true }).catch(() => {});
+  }, []);
   const reduceMotion = useReducedMotion();
   const currentYear = new Date().getFullYear();
   const yearsExperience = Math.max(0, currentYear - experienceStartYear);

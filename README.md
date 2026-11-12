@@ -1,5 +1,32 @@
 # Jimmy Bautista's Portfolio
 
+## Visitor counter
+
+Run `supabase/migrations/20261112000000_site_visitors.sql` in the Supabase SQL
+editor after the base schema, then deploy the updated app. The existing server-only
+`SUPABASE_SERVICE_ROLE_KEY` and Supabase URL are required. Admin Overview shows
+**Unique visitors**, with a refresh button and automatic updates every minute.
+
+Each distinct IP is counted once across all visits, starting when tracking is
+enabled. Refreshing or opening another browser on the same IP does not add to the
+total. Shared networks count as one; changing IPs may count the same person again.
+Visits to the public portfolio trigger tracking; admin-only visits do not.
+This is an IP count, not a count of people or concurrent viewers. Browsers that
+block the tracking request are not counted, and bots that run JavaScript may count.
+
+Only HMAC-SHA256 IP hashes and first-visit timestamps are stored. The service-role
+key is the default hash secret; optionally set a stable, server-only
+`VISITOR_HASH_SECRET` to keep identities stable across service-key rotations.
+Changing the hash secret will count returning IPs again. Browsers cannot write to
+the visitor table or read its hashes; only admins can retrieve the aggregate count.
+
+Vercel uses its overwritten `x-forwarded-for` request header
+([Vercel request headers](https://vercel.com/docs/headers/request-headers)).
+For another host, set `VISITOR_IP_HEADER` to a header that your trusted reverse
+proxy overwrites with the visitor IP. Without that configuration, tracking is
+disabled outside Vercel. For local testing with Next.js, use
+`VISITOR_IP_HEADER=x-forwarded-for`; local visits normally share a loopback IP.
+
 ## Chatbot configuration
 
 The chatbot tries Gemini first and uses local portfolio answers on provider errors,
